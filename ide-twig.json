@@ -1,0 +1,8 @@
+{
+  "namespaces": [
+    {
+      "namespace": "yandex-support",
+      "path": "Resources/view"
+    }
+  ]
+}
