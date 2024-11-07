@@ -124,7 +124,7 @@ final class NewYandexSupportReviewHandler
                 $SupportMessageDTO = new SupportMessageDTO();
 
                 $SupportMessageDTO
-                    ->setName($review->getAuthor() ?? 'Анонимный пользователь')                        // Имя пользователя
+                    ->setName($review->getAuthor())         // Имя пользователя
                     ->setMessage($review->getText())        // Текст сообщения
                     ->setExternal($ticketId)                // Внешний (yandex) ID сообщения
                     ->setDate($review->getCreated())        // Дата сообщения

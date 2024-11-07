@@ -43,7 +43,7 @@ final  class YandexReviewDTO
     private ?string $title;
 
     /** Имя автора отзыва. */
-    private ?string $author;
+    private string $author;
 
     /**
      * description:
@@ -72,7 +72,9 @@ final  class YandexReviewDTO
         /** Собираем тему сообщения в методе title()*/
         $this->title = $this->title($data);
 
-        $this->author = !empty($data['author']) ? mb_ucfirst($data['author']) : null;
+        $this->author = !empty($data['author']) ?
+            mb_ucfirst($data['author']) :
+            'Анонимный пользователь';
 
         /** Собираем текст сообщения в методе text()*/
         $this->text = $this->text($data['description'], $data['media']);
@@ -168,7 +170,7 @@ final  class YandexReviewDTO
         return $this->title;
     }
 
-    public function getAuthor(): ?string
+    public function getAuthor(): string
     {
         return $this->author;
     }
