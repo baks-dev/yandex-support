@@ -51,7 +51,7 @@ final class NewYandexSupportReviewHandler
 
             // TODO: При первом запуске установить необходимое время или закомментировать
             // для получения всех отзывов
-            ->dateFrom(new DateTimeImmutable('10 minutes'))
+            ->dateFrom(new DateTimeImmutable('10 minutes ago'))
             ->findAll();
 
         if(!$reviews->valid())
