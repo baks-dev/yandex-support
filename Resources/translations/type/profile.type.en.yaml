@@ -1,0 +1,10 @@
+yandex-support:
+
+  message:
+    name: 'Яндекс сообщения'
+    desc: 'Сообщения Яндекс'
+
+
+  review:
+    name: 'Яндекс отзывы'
+    desc: 'Отзывы Яндекс'
