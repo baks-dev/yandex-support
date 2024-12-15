@@ -31,7 +31,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 #[AutoconfigureTag('baks.users.profile.type')]
 final class TypeProfileYandexMessageSupport implements TypeProfileInterface
 {
-    public const TYPE = '14bda04d-485d-4511-b8f7-ab8a6b071496';
+    public const string TYPE = '14bda04d-485d-4511-b8f7-ab8a6b071496';
 
     public function __toString(): string
     {
