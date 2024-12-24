@@ -66,13 +66,16 @@ final class NewYandexSupportReviewHandler
     public function __invoke(NewYandexSupportReviewMessage $message): void
     {
 
+        $moscowTimezone = new DateTimeZone(date_default_timezone_get());
+        $from = (new DateTimeImmutable('10 minutes ago'))->setTimezone($moscowTimezone);
+
         /** Получаем все отзывы */
         $reviews = $this->yandexGetListReviewsRequest
             ->profile($message->getProfile())
 
             // TODO: При первом запуске установить необходимое время или закомментировать
             // для получения всех отзывов
-            ->dateFrom(new DateTimeImmutable('10 minutes ago'))
+            ->dateFrom($from)
             ->findAll();
 
         if(!$reviews->valid())
