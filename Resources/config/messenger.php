@@ -29,7 +29,6 @@ return static function(FrameworkConfig $framework) {
 
     $messenger = $framework->messenger();
 
-
     $messenger
         ->transport('yandex-support')
         ->dsn('redis://%env(REDIS_PASSWORD)%@%env(REDIS_HOST)%:%env(REDIS_PORT)%?auto_setup=true')
@@ -40,6 +39,18 @@ return static function(FrameworkConfig $framework) {
         ->delay(1000)
         ->maxDelay(0)
         ->multiplier(3)
+        ->service(null);
+
+    $messenger
+        ->transport('yandex-support-low')
+        ->dsn('%env(MESSENGER_TRANSPORT_DSN)%')
+        ->options(['queue_name' => 'yandex-support'])
+        ->failureTransport('failed-yandex-support')
+        ->retryStrategy()
+        ->maxRetries(1)
+        ->delay(1000)
+        ->maxDelay(1)
+        ->multiplier(2)
         ->service(null);
 
     $failure = $framework->messenger();
