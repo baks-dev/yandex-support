@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -40,23 +40,20 @@ use BaksDev\Yandex\Support\Api\Review\Post\ReplyToReview\YandexReplyToReviewRequ
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexReviewSupport;
 use DateInterval;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler(priority: 0)]
-final class ReplyYandexSupportReviewHandler
+final readonly class ReplyYandexSupportReviewHandler
 {
-    private LoggerInterface $logger;
-
     public function __construct(
+        #[Target('yandexSupportLogger')] private readonly LoggerInterface $logger,
         private YandexReplyToReviewRequest $replyToReviewRequest,
         private CurrentSupportEventInterface $currentSupportEvent,
         private MessageDispatchInterface $messageDispatch,
         private DeduplicatorInterface $deduplicator,
         LoggerInterface $yandexSupportLogger,
-    )
-    {
-        $this->logger = $yandexSupportLogger;
-    }
+    ) {}
 
     public function __invoke(SupportMessage $message): void
     {

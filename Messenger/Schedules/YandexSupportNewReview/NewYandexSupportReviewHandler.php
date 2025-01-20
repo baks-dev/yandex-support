@@ -44,25 +44,20 @@ use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexReviewSupport;
 use DateTimeImmutable;
 use DateTimeZone;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler(priority: 0)]
-final class NewYandexSupportReviewHandler
+final readonly class NewYandexSupportReviewHandler
 {
-    private LoggerInterface $logger;
-
     public function __construct(
+        #[Target('yandexSupportLogger')] private LoggerInterface $logger,
         private SupportHandler $supportHandler,
         private YandexGetListReviewsRequest $yandexGetListReviewsRequest,
         private YandexGetCommentsRequest $yandexGetCommentsRequest,
         private CurrentSupportEventByTicketInterface $currentSupportEventByTicket,
         private FindExistExternalMessageByIdInterface $findExistMessage,
-        LoggerInterface $yandexSupportLogger,
-    )
-    {
-        $this->logger = $yandexSupportLogger;
-    }
-
+    ) {}
 
     public function __invoke(NewYandexSupportReviewMessage $message): void
     {

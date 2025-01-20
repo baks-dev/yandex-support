@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace BaksDev\Yandex\Support\Messenger\Schedules\YandexSupportNewMessage;
 
+use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Repository\FindExistMessage\FindExistExternalMessageByIdInterface;
 use BaksDev\Support\Repository\SupportCurrentEventByTicket\CurrentSupportEventByTicketInterface;
@@ -42,35 +43,52 @@ use BaksDev\Yandex\Support\Api\Messenger\Get\ChatsInfo\YandexGetChatsInfoRequest
 use BaksDev\Yandex\Support\Api\Messenger\Get\ListMessages\YandexGetListMessagesRequest;
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexMessageSupport;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler(priority: 0)]
 final class NewYandexSupportHandler
 {
-    private LoggerInterface $logger;
-
     public function __construct(
+        #[Target('yandexSupportLogger')] private LoggerInterface $logger,
         private SupportHandler $supportHandler,
         private CurrentSupportEventByTicketInterface $currentSupportEventByTicket,
         private FindExistExternalMessageByIdInterface $findExistMessage,
         private YandexGetChatsInfoRequest $getChatsInfoRequest,
         private YandexGetListMessagesRequest $messagesRequest,
-        LoggerInterface $yandexSupportLogger,
+        private DeduplicatorInterface $deduplicator,
     )
     {
-        $this->logger = $yandexSupportLogger;
+        $deduplicator->namespace('yandex-support');
     }
 
 
     public function __invoke(NewYandexSupportMessage $message): void
     {
-        /** Получаем все непрочитанные чаты */
+        $isExecuted = $this
+            ->deduplicator
+            ->expiresAfter('1 minute')
+            ->deduplication([$message->getProfile(), self::class]);
+
+        if($isExecuted->isExecuted())
+        {
+            return;
+        }
+
+        $isExecuted->save();
+
+
+        /**
+         * Получаем все непрочитанные чаты
+         */
+
         $chats = $this->getChatsInfoRequest
             ->profile($message->getProfile())
             ->findAll();
 
         if(!$chats->valid())
         {
+            $isExecuted->delete();
             return;
         }
 
@@ -81,7 +99,7 @@ final class NewYandexSupportHandler
             /** Получаем ID чата */
             $ticketId = $chat->getId();
 
-            /** Если такой тикет уже существует в БД, то присваиваем в переменную  $supportEvent */
+            /** Если такой тикет уже существует в БД, то присваиваем в переменную $supportEvent */
             $supportEvent = $this->currentSupportEventByTicket
                 ->forTicket($ticketId)
                 ->find();
@@ -146,19 +164,16 @@ final class NewYandexSupportHandler
                     continue;
                 }
 
-                /** Имя отправителя сообщения */
-                $name = $listMessage->getSender();
+                /**
+                 * SupportMessageDTO
+                 */
 
-                /** Текст сообщения */
-                $text = $listMessage->getText();
-
-                /** SupportMessageDTO */
                 $SupportMessageDTO = new SupportMessageDTO();
 
                 $SupportMessageDTO
                     ->setExternal($listMessage->getExternalId())    // Внешний (Авито) id сообщения
-                    ->setName($name)                                // Имя отправителя сообщения
-                    ->setMessage($text)                             // Текст сообщения
+                    ->setName($listMessage->getSender())                                // Имя отправителя сообщения
+                    ->setMessage($listMessage->getText())                             // Текст сообщения
                     ->setDate($listMessage->getCreated())           // Дата сообщения
                 ;
 
@@ -166,7 +181,6 @@ final class NewYandexSupportHandler
                 $listMessage->getSender() === 'PARTNER' ?
                     $SupportMessageDTO->setOutMessage() :
                     $SupportMessageDTO->setInMessage();
-
 
                 /** Сохраняем данные SupportMessageDTO в Support */
                 $isAddMessage = $SupportDTO->addMessage($SupportMessageDTO);
@@ -191,5 +205,7 @@ final class NewYandexSupportHandler
                 }
             }
         }
+
+        $isExecuted->delete();
     }
 }

@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -40,23 +40,19 @@ use BaksDev\Yandex\Support\Api\Messenger\Post\SendMessage\YandexSendMessageReque
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexMessageSupport;
 use DateInterval;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler(priority: 0)]
-final class ReplyYandexSupportMessageHandler
+final readonly class ReplyYandexSupportMessageHandler
 {
-    private LoggerInterface $logger;
-
     public function __construct(
+        #[Target('avitoSupportLogger')] private LoggerInterface $logger,
         private YandexSendMessageRequest $messageRequest,
         private CurrentSupportEventInterface $currentSupportEvent,
         private MessageDispatchInterface $messageDispatch,
         private DeduplicatorInterface $deduplicator,
-        LoggerInterface $avitoSupportLogger,
-    )
-    {
-        $this->logger = $avitoSupportLogger;
-    }
+    ) {}
 
     public function __invoke(SupportMessage $message): void
     {
