@@ -47,7 +47,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 final readonly class ReplyYandexSupportMessageHandler
 {
     public function __construct(
-        #[Target('avitoSupportLogger')] private LoggerInterface $logger,
+        #[Target('yandexSupportLogger')] private LoggerInterface $logger,
         private YandexSendMessageRequest $messageRequest,
         private CurrentSupportEventInterface $currentSupportEvent,
         private MessageDispatchInterface $messageDispatch,
