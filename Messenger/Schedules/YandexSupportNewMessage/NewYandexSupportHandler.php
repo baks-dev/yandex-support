@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Yandex\Support\Messenger\Schedules\YandexSupportNewMessage;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
+use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Repository\FindExistMessage\FindExistExternalMessageByIdInterface;
 use BaksDev\Support\Repository\SupportCurrentEventByTicket\CurrentSupportEventByTicketInterface;
@@ -110,20 +111,20 @@ final class NewYandexSupportHandler
                 ->chat($ticketId)
                 ->findAll();
 
-            if(!$listMessages->valid())
+            if(false === $listMessages->valid())
             {
                 continue;
             }
 
             $SupportDTO = new SupportDTO();
 
-            if($supportEvent)
+            if(true === ($supportEvent instanceof SupportEvent))
             {
                 $supportEvent->getDto($SupportDTO);
             }
 
             /** Присваиваем значения по умолчанию */
-            if(false === $supportEvent)
+            if(false === ($supportEvent instanceof SupportEvent))
             {
                 /** Присваиваем приоритет сообщения "высокий", так как это сообщение от пользователя */
                 $SupportDTO->setPriority(new SupportPriority(SupportPriorityLow::PARAM));
@@ -171,9 +172,9 @@ final class NewYandexSupportHandler
                 $SupportMessageDTO = new SupportMessageDTO();
 
                 $SupportMessageDTO
-                    ->setExternal($listMessage->getExternalId())    // Внешний (Авито) id сообщения
-                    ->setName($listMessage->getSender())                                // Имя отправителя сообщения
-                    ->setMessage($listMessage->getText())                             // Текст сообщения
+                    ->setExternal($listMessage->getExternalId())    // Внешний id сообщения
+                    ->setName($listMessage->getSender())            // Имя отправителя сообщения
+                    ->setMessage($listMessage->getText())           // Текст сообщения
                     ->setDate($listMessage->getCreated())           // Дата сообщения
                 ;
 
