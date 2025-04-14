@@ -35,6 +35,9 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 #[AutoconfigureTag('baks.schedule')]
 final class YandexGetNewReviewSchedule implements ScheduleInterface
 {
+
+    public const string INTERVAL = '5 minutes';
+
     /**
      * Возвращает класс сообщение
      */
@@ -49,6 +52,6 @@ final class YandexGetNewReviewSchedule implements ScheduleInterface
      */
     public function getInterval(): DateInterval
     {
-        return DateInterval::createFromDateString('5 minutes');
+        return DateInterval::createFromDateString(self::INTERVAL);
     }
 }

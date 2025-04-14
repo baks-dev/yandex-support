@@ -66,6 +66,8 @@ final class NewYandexSupportHandler
 
     public function __invoke(NewYandexSupportMessage $message): void
     {
+        /** Дедубликатор от повторных вызовов */
+
         $isExecuted = $this
             ->deduplicator
             ->expiresAfter('1 minute')

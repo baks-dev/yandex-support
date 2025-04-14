@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace BaksDev\Yandex\Support\Messenger\Schedules\YandexSupportNewReview;
 
+use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Repository\FindExistMessage\FindExistExternalMessageByIdInterface;
 use BaksDev\Support\Repository\SupportCurrentEventByTicket\CurrentSupportEventByTicketInterface;
@@ -40,7 +41,9 @@ use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
 use BaksDev\Yandex\Support\Api\Review\Get\GetComments\YandexGetCommentsRequest;
 use BaksDev\Yandex\Support\Api\Review\Get\GetListReviews\YandexGetListReviewsRequest;
 use BaksDev\Yandex\Support\Api\Review\Get\GetListReviews\YandexReviewDTO;
+use BaksDev\Yandex\Support\Schedule\YandexGetNewReview\YandexGetNewReviewSchedule;
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexReviewSupport;
+use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
 use Psr\Log\LoggerInterface;
@@ -57,20 +60,40 @@ final readonly class NewYandexSupportReviewHandler
         private YandexGetCommentsRequest $yandexGetCommentsRequest,
         private CurrentSupportEventByTicketInterface $currentSupportEventByTicket,
         private FindExistExternalMessageByIdInterface $findExistMessage,
+        private DeduplicatorInterface $deduplicator
     ) {}
 
     public function __invoke(NewYandexSupportReviewMessage $message): void
     {
+        /** Дедубликатор от повторных вызовов */
 
-        $moscowTimezone = new DateTimeZone(date_default_timezone_get());
-        $from = (new DateTimeImmutable('10 minutes ago'))->setTimezone($moscowTimezone);
+        $isExecuted = $this
+            ->deduplicator
+            ->expiresAfter('1 minute')
+            ->deduplication([$message->getProfile(), self::class]);
 
-        /** Получаем все отзывы */
+        if($isExecuted->isExecuted())
+        {
+            return;
+        }
+
+        $isExecuted->save();
+
+        /**
+         * Получаем все непрочитанные отзывы
+         */
+
+        $from = new DateTimeImmutable()
+            ->setTimezone(new DateTimeZone('GMT'))
+
+            // периодичность scheduler
+            ->sub(DateInterval::createFromDateString(YandexGetNewReviewSchedule::INTERVAL))
+
+            // 1 минута запас на runtime
+            ->sub(DateInterval::createFromDateString('1 minute'));
+
         $reviews = $this->yandexGetListReviewsRequest
             ->profile($message->getProfile())
-
-            // TODO: При первом запуске установить необходимое время или закомментировать
-            // для получения всех отзывов
             ->dateFrom($from)
             ->findAll();
 
@@ -82,7 +105,6 @@ final readonly class NewYandexSupportReviewHandler
         /** @var YandexReviewDTO $review */
         foreach($reviews as $review)
         {
-
             /** Получаем ID чата с отзывом  */
             $ticketId = $review->getReviewId();
 
