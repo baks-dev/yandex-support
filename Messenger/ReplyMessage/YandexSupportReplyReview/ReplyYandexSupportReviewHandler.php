@@ -78,15 +78,14 @@ final readonly class ReplyYandexSupportReviewHandler
         /** @var SupportInvariableDTO $SupportInvariableDTO */
         $SupportInvariableDTO = $SupportDTO->getInvariable();
 
-        /** Получаем тип профиля  */
-        $TypeProfileUid = $SupportInvariableDTO->getType();
-
         /** Обрываем, если статус тикета "открытый" */
         if(false === $SupportDTO->getStatus()->equals(SupportStatusClose::class))
         {
             return;
         }
 
+        /** Получаем тип профиля  */
+        $TypeProfileUid = $SupportInvariableDTO->getType();
         /** Обрываем, если тип профиля не Авито Review */
         if(false === $TypeProfileUid->equals(TypeProfileYandexReviewSupport::TYPE))
         {
