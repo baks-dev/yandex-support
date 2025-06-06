@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +43,7 @@ class YandexSendMessageRequestTest extends KernelTestCase
     public static function setUpBeforeClass(): void
     {
         self::$authorization = new YaMarketAuthorizationToken(
-            new UserProfileUid(),
+            UserProfileUid::TEST,
             $_SERVER['TEST_YANDEX_MARKET_TOKEN'],
             $_SERVER['TEST_YANDEX_MARKET_COMPANY'],
             $_SERVER['TEST_YANDEX_MARKET_BUSINESS']
@@ -52,8 +52,8 @@ class YandexSendMessageRequestTest extends KernelTestCase
 
     public function testComplete(): void
     {
-        self::assertTrue(true);
-        return;
+        //self::assertTrue(true);
+        //return;
 
         /** @var YandexSendMessageRequest $YandexSendMessageRequest */
         $YandexSendMessageRequest = self::getContainer()->get(YandexSendMessageRequest::class);

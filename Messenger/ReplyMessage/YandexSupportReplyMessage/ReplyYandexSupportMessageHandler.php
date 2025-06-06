@@ -36,6 +36,7 @@ use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
 use BaksDev\Support\UseCase\Admin\New\Invariable\SupportInvariableDTO;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
+use BaksDev\Yandex\Market\Repository\YaMarketTokensByProfile\YaMarketTokensByProfileInterface;
 use BaksDev\Yandex\Support\Api\Messenger\Post\SendMessage\YandexSendMessageRequest;
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexMessageSupport;
 use DateInterval;
@@ -52,6 +53,7 @@ final readonly class ReplyYandexSupportMessageHandler
         private CurrentSupportEventInterface $currentSupportEvent,
         private MessageDispatchInterface $messageDispatch,
         private DeduplicatorInterface $deduplicator,
+        private YaMarketTokensByProfileInterface $YaMarketTokensByProfile,
     ) {}
 
     public function __invoke(SupportMessage $message): void
@@ -59,12 +61,11 @@ final readonly class ReplyYandexSupportMessageHandler
         /** @var SupportEvent $support */
         $support = $message->getId();
 
-        $supportEvent = $this
-            ->currentSupportEvent
+        $supportEvent = $this->currentSupportEvent
             ->forSupport($support)
             ->find();
 
-        if(false === $supportEvent)
+        if(false === ($supportEvent instanceof SupportEvent))
         {
             return;
         }
@@ -93,6 +94,7 @@ final readonly class ReplyYandexSupportMessageHandler
 
         /**
          * Получаем последнее сообщение
+         *
          * @var SupportMessageDTO $supportMessage
          */
         $supportMessage = $SupportDTO->getMessages()->last();
@@ -113,9 +115,22 @@ final readonly class ReplyYandexSupportMessageHandler
             return;
         }
 
+        /** Получаем все токены профиля */
+
+        $tokensByProfile = $this->YaMarketTokensByProfile
+            ->findAll($SupportInvariableDTO->getProfile());
+
+        if(false === $tokensByProfile || false === $tokensByProfile->valid())
+        {
+            return;
+        }
+
+        $YaMarketTokenUid = $tokensByProfile->current();
+
+
         /** Отправка сообщения */
         $send = $this->messageRequest
-            ->profile($SupportInvariableDTO->getProfile())
+            ->forTokenIdentifier($YaMarketTokenUid)
             ->yandexChat($SupportInvariableDTO->getTicket())
             ->message($supportMessage->getMessage())
             ->send();
@@ -125,14 +140,14 @@ final readonly class ReplyYandexSupportMessageHandler
             $this->logger->critical(
                 sprintf(
                     'yandex-support: Пробуем отправить сообщение в тикет %s через 1 минуту',
-                    $SupportInvariableDTO->getTicket()
-                )
+                    $SupportInvariableDTO->getTicket(),
+                ),
             );
 
             $this->messageDispatch->dispatch(
                 message: $message,
                 stamps: [new MessageDelay('1 minutes')],
-                transport: 'yandex-support'
+                transport: 'yandex-support',
             );
 
             return;

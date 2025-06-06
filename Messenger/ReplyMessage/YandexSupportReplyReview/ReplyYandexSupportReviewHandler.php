@@ -36,6 +36,7 @@ use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusClose;
 use BaksDev\Support\UseCase\Admin\New\Invariable\SupportInvariableDTO;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
+use BaksDev\Yandex\Market\Repository\YaMarketTokensByProfile\YaMarketTokensByProfileInterface;
 use BaksDev\Yandex\Support\Api\Review\Post\ReplyToReview\YandexReplyToReviewRequest;
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexReviewSupport;
 use DateInterval;
@@ -52,12 +53,12 @@ final readonly class ReplyYandexSupportReviewHandler
         private CurrentSupportEventInterface $currentSupportEvent,
         private MessageDispatchInterface $messageDispatch,
         private DeduplicatorInterface $deduplicator,
-        LoggerInterface $yandexSupportLogger,
+        private YaMarketTokensByProfileInterface $YaMarketTokensByProfile,
+
     ) {}
 
     public function __invoke(SupportMessage $message): void
     {
-
         /** @var SupportEvent $support */
         $support = $message->getId();
 
@@ -65,7 +66,7 @@ final readonly class ReplyYandexSupportReviewHandler
 
         $supportEvent = $this->currentSupportEvent->find();
 
-        if(false === $supportEvent)
+        if(false === $supportEvent instanceof SupportEvent)
         {
             return;
         }
@@ -86,12 +87,12 @@ final readonly class ReplyYandexSupportReviewHandler
 
         /** Получаем тип профиля  */
         $TypeProfileUid = $SupportInvariableDTO->getType();
+
         /** Обрываем, если тип профиля не Авито Review */
         if(false === $TypeProfileUid->equals(TypeProfileYandexReviewSupport::TYPE))
         {
             return;
         }
-
 
         /**
          * Получаем последнее сообщение
@@ -115,9 +116,21 @@ final readonly class ReplyYandexSupportReviewHandler
             return;
         }
 
+        /** Получаем все токены профиля */
+
+        $tokensByProfile = $this->YaMarketTokensByProfile
+            ->findAll($SupportInvariableDTO->getProfile());
+
+        if(false === $tokensByProfile || false === $tokensByProfile->valid())
+        {
+            return;
+        }
+
+        $YaMarketTokenUid = $tokensByProfile->current();
+
         /** Отправляем ответ в чат с отзывами */
         $send = $this->replyToReviewRequest
-            ->profile($SupportInvariableDTO->getProfile())
+            ->forTokenIdentifier($YaMarketTokenUid)
             ->feedback($SupportInvariableDTO->getTicket())
             ->message($supportMessage->getMessage())
             ->send();

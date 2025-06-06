@@ -39,6 +39,7 @@ use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportHandler;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
+use BaksDev\Yandex\Market\Repository\YaMarketTokensByProfile\YaMarketTokensByProfileInterface;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ChatsInfo\YandexChatsDTO;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ChatsInfo\YandexGetChatsInfoRequest;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ListMessages\YandexGetListMessagesRequest;
@@ -48,7 +49,7 @@ use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler(priority: 0)]
-final class NewYandexSupportHandler
+final readonly class NewYandexSupportHandler
 {
     public function __construct(
         #[Target('yandexSupportLogger')] private LoggerInterface $logger,
@@ -58,6 +59,7 @@ final class NewYandexSupportHandler
         private YandexGetChatsInfoRequest $getChatsInfoRequest,
         private YandexGetListMessagesRequest $messagesRequest,
         private DeduplicatorInterface $deduplicator,
+        private YaMarketTokensByProfileInterface $YaMarketTokensByProfile,
     )
     {
         $deduplicator->namespace('yandex-support');
@@ -81,12 +83,24 @@ final class NewYandexSupportHandler
         $isExecuted->save();
 
 
+        /** Получаем все токены профиля */
+
+        $tokensByProfile = $this->YaMarketTokensByProfile
+            ->findAll($message->getProfile());
+
+        if(false === $tokensByProfile || false === $tokensByProfile->valid())
+        {
+            return;
+        }
+
+        $YaMarketTokenUid = $tokensByProfile->current();
+
         /**
          * Получаем все непрочитанные чаты
          */
 
         $chats = $this->getChatsInfoRequest
-            ->profile($message->getProfile())
+            ->forTokenIdentifier($YaMarketTokenUid)
             ->findAll();
 
         if(!$chats->valid())
@@ -98,7 +112,6 @@ final class NewYandexSupportHandler
         /** @var YandexChatsDTO $chat */
         foreach($chats as $chat)
         {
-
             /** Получаем ID чата */
             $ticketId = $chat->getId();
 
@@ -109,7 +122,7 @@ final class NewYandexSupportHandler
 
             /** Получаем сообщения чата  */
             $listMessages = $this->messagesRequest
-                ->profile($message->getProfile())
+                ->forTokenIdentifier($YaMarketTokenUid)
                 ->chat($ticketId)
                 ->findAll();
 

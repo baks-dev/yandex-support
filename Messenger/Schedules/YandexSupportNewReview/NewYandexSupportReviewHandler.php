@@ -38,6 +38,7 @@ use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportHandler;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
+use BaksDev\Yandex\Market\Repository\YaMarketTokensByProfile\YaMarketTokensByProfileInterface;
 use BaksDev\Yandex\Support\Api\Review\Get\GetComments\YandexGetCommentsRequest;
 use BaksDev\Yandex\Support\Api\Review\Get\GetListReviews\YandexGetListReviewsRequest;
 use BaksDev\Yandex\Support\Api\Review\Get\GetListReviews\YandexReviewDTO;
@@ -60,7 +61,8 @@ final readonly class NewYandexSupportReviewHandler
         private YandexGetCommentsRequest $yandexGetCommentsRequest,
         private CurrentSupportEventByTicketInterface $currentSupportEventByTicket,
         private FindExistExternalMessageByIdInterface $findExistMessage,
-        private DeduplicatorInterface $deduplicator
+        private DeduplicatorInterface $deduplicator,
+        private YaMarketTokensByProfileInterface $YaMarketTokensByProfile,
     ) {}
 
     public function __invoke(NewYandexSupportReviewMessage $message): void
@@ -79,6 +81,19 @@ final readonly class NewYandexSupportReviewHandler
 
         $isExecuted->save();
 
+
+        /** Получаем все токены профиля */
+
+        $tokensByProfile = $this->YaMarketTokensByProfile
+            ->findAll($message->getProfile());
+
+        if(false === $tokensByProfile || false === $tokensByProfile->valid())
+        {
+            return;
+        }
+
+        $YaMarketTokenUid = $tokensByProfile->current();
+
         /**
          * Получаем все непрочитанные отзывы
          */
@@ -90,10 +105,10 @@ final readonly class NewYandexSupportReviewHandler
             ->sub(DateInterval::createFromDateString(YandexGetNewReviewSchedule::INTERVAL))
 
             // 1 минута запас на runtime
-            ->sub(DateInterval::createFromDateString('1 minute'));
+            ->sub(DateInterval::createFromDateString('1 hour'));
 
         $reviews = $this->yandexGetListReviewsRequest
-            ->profile($message->getProfile())
+            ->forTokenIdentifier($YaMarketTokenUid)
             ->dateFrom($from)
             ->findAll();
 
@@ -110,7 +125,7 @@ final readonly class NewYandexSupportReviewHandler
 
             /** Получаем комментарии к чату */
             $comments = $this->yandexGetCommentsRequest
-                ->profile($message->getProfile())
+                ->forTokenIdentifier($YaMarketTokenUid)
                 ->feedback($ticketId)
                 ->findAll();
 
@@ -218,7 +233,7 @@ final readonly class NewYandexSupportReviewHandler
             {
                 $this->logger->critical(
                     sprintf('yandex-support: Ошибка %s при обновлении чата', $handle),
-                    [self::class.':'.__LINE__]
+                    [self::class.':'.__LINE__],
                 );
             }
         }
