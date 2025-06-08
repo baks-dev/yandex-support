@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -45,11 +45,13 @@ class YandexGetListReviewsRequestTest extends KernelTestCase
 
     public static function setUpBeforeClass(): void
     {
-        self::$authorization = new YaMarketAuthorizationToken(
-            new UserProfileUid(),
-            $_SERVER['TEST_YANDEX_MARKET_TOKEN'],
-            $_SERVER['TEST_YANDEX_MARKET_COMPANY'],
-            $_SERVER['TEST_YANDEX_MARKET_BUSINESS']
+        self::$Authorization = new YaMarketAuthorizationToken(
+            profile: UserProfileUid::TEST,
+            token: $_SERVER['TEST_YANDEX_MARKET_TOKEN'],
+            company: (int) $_SERVER['TEST_YANDEX_MARKET_COMPANY'],
+            business: (int) $_SERVER['TEST_YANDEX_MARKET_BUSINESS'],
+            card: false,
+            stocks: false,
         );
     }
 
