@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 #[AutoconfigureTag('baks.users.profile.type')]
 final class TypeProfileYandexReviewSupport implements TypeProfileInterface
 {
-    public const string TYPE = 'b4e96b21-9217-432f-a233-37921b4dbe9d';
+    public const string TYPE = '4f2be139-3379-7c81-876c-2b38e6ae93be';
 
     public function __toString(): string
     {
