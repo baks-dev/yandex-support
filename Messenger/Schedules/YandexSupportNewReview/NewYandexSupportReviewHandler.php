@@ -151,9 +151,8 @@ final readonly class NewYandexSupportReviewHandler
                 /** SupportInvariableDTO */
                 $SupportInvariableDTO = new SupportInvariableDTO();
 
-                $SupportInvariableDTO->setProfile($message->getProfile());
-
                 $SupportInvariableDTO
+                    //->setProfile($message->getProfile()) // Профиль
                     ->setType(new TypeProfileUid(TypeProfileYandexReviewSupport::TYPE)) // TypeProfileAvitoReviewSupport::TYPE
                     ->setTicket($review->getReviewId()) // Id тикета
                     ->setTitle($review->getTitle()); // Тема сообщения

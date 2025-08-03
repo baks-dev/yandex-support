@@ -148,7 +148,7 @@ final readonly class NewYandexSupportHandler
                 $SupportInvariableDTO = new SupportInvariableDTO();
 
                 $SupportInvariableDTO
-                    ->setProfile($message->getProfile()) // Профиль
+                    //->setProfile($message->getProfile()) // Профиль
                     ->setType(new TypeProfileUid(TypeProfileYandexMessageSupport::TYPE)) // TypeProfileYandexMessageSupport::TYPE
                     ->setTicket($ticketId)                                       //  Id тикета
                     ->setTitle(sprintf('Заказ #%s', $chat->getOrder()));  // Тема сообщения
