@@ -61,18 +61,17 @@ final readonly class ReplyYandexSupportMessageHandler
         /** @var SupportEvent $support */
         $support = $message->getId();
 
-        $supportEvent = $this->currentSupportEvent
+        $SupportEvent = $this->currentSupportEvent
             ->forSupport($support)
             ->find();
 
-        if(false === ($supportEvent instanceof SupportEvent))
+        if(false === ($SupportEvent instanceof SupportEvent))
         {
             return;
         }
 
         /** @var SupportDTO $SupportDTO */
-        $SupportDTO = new SupportDTO();
-        $supportEvent->getDto($SupportDTO);
+        $SupportDTO = $SupportEvent->getDto(SupportDTO::class);
 
         /** @var SupportInvariableDTO $SupportInvariableDTO */
         $SupportInvariableDTO = $SupportDTO->getInvariable();

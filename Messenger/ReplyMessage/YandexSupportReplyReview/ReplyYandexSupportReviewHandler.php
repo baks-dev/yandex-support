@@ -72,9 +72,7 @@ final readonly class ReplyYandexSupportReviewHandler
         }
 
         /** @var SupportDTO $SupportDTO */
-        $SupportDTO = new SupportDTO();
-
-        $supportEvent->getDto($SupportDTO);
+        $SupportDTO = $supportEvent->getDto(SupportDTO::class);
 
         /** @var SupportInvariableDTO $SupportInvariableDTO */
         $SupportInvariableDTO = $SupportDTO->getInvariable();
@@ -96,6 +94,7 @@ final readonly class ReplyYandexSupportReviewHandler
 
         /**
          * Получаем последнее сообщение
+         *
          * @var SupportMessageDTO $message
          */
         $supportMessage = $SupportDTO->getMessages()->last();
@@ -140,14 +139,14 @@ final readonly class ReplyYandexSupportReviewHandler
             $this->logger->critical(
                 sprintf(
                     'yandex-support: Пробуем отправить сообщение в тикет %s через 1 минуту',
-                    $SupportInvariableDTO->getTicket()
-                )
+                    $SupportInvariableDTO->getTicket(),
+                ),
             );
 
             $this->messageDispatch->dispatch(
                 message: $message,
                 stamps: [new MessageDelay('1 minutes')],
-                transport: 'yandex-support'
+                transport: 'yandex-support',
             );
 
             return;

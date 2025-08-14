@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Yandex\Support\Messenger\Schedules\YandexSupportNewReview;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
+use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Repository\FindExistMessage\FindExistExternalMessageByIdInterface;
 use BaksDev\Support\Repository\SupportCurrentEventByTicket\CurrentSupportEventByTicketInterface;
@@ -104,7 +105,7 @@ final readonly class NewYandexSupportReviewHandler
             // периодичность scheduler
             ->sub(DateInterval::createFromDateString(YandexGetNewReviewSchedule::INTERVAL))
 
-            // 1 минута запас на runtime
+            // запас на runtime
             ->sub(DateInterval::createFromDateString('1 hour'));
 
         $reviews = $this->yandexGetListReviewsRequest
@@ -112,7 +113,7 @@ final readonly class NewYandexSupportReviewHandler
             ->dateFrom($from)
             ->findAll();
 
-        if(!$reviews->valid())
+        if(false === $reviews->valid())
         {
             return;
         }
@@ -135,13 +136,10 @@ final readonly class NewYandexSupportReviewHandler
                 ->find();
 
 
-            $SupportDTO = new SupportDTO();
+            $SupportDTO = $supportEvent instanceof SupportEvent
+                ? $supportEvent->getDto(SupportDTO::class)
+                : new SupportDTO(); // done
 
-            if($supportEvent)
-            {
-                $supportEvent->getDto($SupportDTO);
-
-            }
 
             if(false === $supportEvent)
             {
@@ -195,7 +193,6 @@ final readonly class NewYandexSupportReviewHandler
             {
                 foreach($comments as $comment)
                 {
-
                     /** Если такое сообщение уже есть в БД, то пропускаем */
                     $commentExist = $this->findExistMessage
                         ->external($comment->getId())

@@ -26,6 +26,8 @@ declare(strict_types=1);
 namespace BaksDev\Yandex\Support\Messenger\Schedules\YandexSupportNewMessage;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
+use BaksDev\Orders\Order\Entity\Event\OrderEvent;
+use BaksDev\Orders\Order\Repository\CurrentOrderNumber\CurrentOrderEventByNumberInterface;
 use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Repository\FindExistMessage\FindExistExternalMessageByIdInterface;
@@ -60,10 +62,8 @@ final readonly class NewYandexSupportHandler
         private YandexGetListMessagesRequest $messagesRequest,
         private DeduplicatorInterface $deduplicator,
         private YaMarketTokensByProfileInterface $YaMarketTokensByProfile,
-    )
-    {
-        $deduplicator->namespace('yandex-support');
-    }
+        private CurrentOrderEventByNumberInterface $CurrentOrderEventByNumberRepository
+    ) {}
 
 
     public function __invoke(NewYandexSupportMessage $message): void
@@ -72,6 +72,7 @@ final readonly class NewYandexSupportHandler
 
         $isExecuted = $this
             ->deduplicator
+            ->namespace('yandex-support')
             ->expiresAfter('1 minute')
             ->deduplication([$message->getProfile(), self::class]);
 
@@ -93,132 +94,165 @@ final readonly class NewYandexSupportHandler
             return;
         }
 
-        $YaMarketTokenUid = $tokensByProfile->current();
 
-        /**
-         * Получаем все непрочитанные чаты
-         */
-
-        $chats = $this->getChatsInfoRequest
-            ->forTokenIdentifier($YaMarketTokenUid)
-            ->findAll();
-
-        if(!$chats->valid())
+        foreach($tokensByProfile as $YaMarketTokenUid)
         {
-            $isExecuted->delete();
-            return;
-        }
+            /**
+             * Получаем все непрочитанные чаты
+             */
 
-        /** @var YandexChatsDTO $chat */
-        foreach($chats as $chat)
-        {
-            /** Получаем ID чата */
-            $ticketId = $chat->getId();
-
-            /** Если такой тикет уже существует в БД, то присваиваем в переменную $supportEvent */
-            $supportEvent = $this->currentSupportEventByTicket
-                ->forTicket($ticketId)
-                ->find();
-
-            /** Получаем сообщения чата  */
-            $listMessages = $this->messagesRequest
+            $chats = $this->getChatsInfoRequest
                 ->forTokenIdentifier($YaMarketTokenUid)
-                ->chat($ticketId)
                 ->findAll();
 
-            if(false === $listMessages->valid())
+            if(false === $chats->valid())
             {
                 continue;
             }
 
-            $SupportDTO = new SupportDTO();
-
-            if(true === ($supportEvent instanceof SupportEvent))
+            /** @var YandexChatsDTO $chat */
+            foreach($chats as $chat)
             {
-                $supportEvent->getDto($SupportDTO);
-            }
+                /** Получаем ID чата */
+                $ticketId = $chat->getId();
 
-            /** Присваиваем значения по умолчанию */
-            if(false === ($supportEvent instanceof SupportEvent))
-            {
-                /** Присваиваем приоритет сообщения "высокий", так как это сообщение от пользователя */
-                $SupportDTO->setPriority(new SupportPriority(SupportPriorityLow::PARAM));
+                $DeduplicatorTicket = $this->deduplicator
+                    ->namespace('yandex-support')
+                    ->expiresAfter('30 seconds')
+                    ->deduplication([$ticketId, self::class]);
 
-                /** SupportInvariableDTO */
-                $SupportInvariableDTO = new SupportInvariableDTO();
-
-                $SupportInvariableDTO
-                    //->setProfile($message->getProfile()) // Профиль
-                    ->setType(new TypeProfileUid(TypeProfileYandexMessageSupport::TYPE)) // TypeProfileYandexMessageSupport::TYPE
-                    ->setTicket($ticketId)                                       //  Id тикета
-                    ->setTitle(sprintf('Заказ #%s', $chat->getOrder()));  // Тема сообщения
-
-                /** Сохраняем данные SupportInvariableDTO в Support */
-                $SupportDTO->setInvariable($SupportInvariableDTO);
-            }
-
-            /** Присваиваем статус "Открытый", так как сообщение еще не прочитано   */
-            $SupportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM));
-
-            $isHandle = false;
-
-            foreach($listMessages as $listMessage)
-            {
-                /** Пропускаем, если сообщение системное  */
-                if($listMessage->getSender() === 'MARKET')
+                if($DeduplicatorTicket->isExecuted())
                 {
                     continue;
                 }
 
-                /** Если такое сообщение уже есть в БД, то пропускаем */
-                $messageExist = $this->findExistMessage
-                    ->external($listMessage->getExternalId())
-                    ->exist();
+                /** Если такой тикет уже существует в БД, то присваиваем в переменную $supportEvent */
+                $supportEvent = $this->currentSupportEventByTicket
+                    ->forTicket($ticketId)
+                    ->find();
 
-                if($messageExist)
+                /** Получаем сообщения чата  */
+                $listMessages = $this->messagesRequest
+                    ->forTokenIdentifier($YaMarketTokenUid)
+                    ->chat($ticketId)
+                    ->findAll();
+
+                if(false === $listMessages->valid())
                 {
                     continue;
                 }
 
-                /**
-                 * SupportMessageDTO
-                 */
+                $SupportDTO = true === ($supportEvent instanceof SupportEvent)
+                    ? $supportEvent->getDto(SupportDTO::class)
+                    : new SupportDTO(); // done
 
-                $SupportMessageDTO = new SupportMessageDTO();
-
-                $SupportMessageDTO
-                    ->setExternal($listMessage->getExternalId())    // Внешний id сообщения
-                    ->setName($listMessage->getSender())            // Имя отправителя сообщения
-                    ->setMessage($listMessage->getText())           // Текст сообщения
-                    ->setDate($listMessage->getCreated())           // Дата сообщения
-                ;
-
-                /** Если это сообщение изначально наше, то сохраняем как 'out' */
-                $listMessage->getSender() === 'PARTNER' ?
-                    $SupportMessageDTO->setOutMessage() :
-                    $SupportMessageDTO->setInMessage();
-
-                /** Сохраняем данные SupportMessageDTO в Support */
-                $isAddMessage = $SupportDTO->addMessage($SupportMessageDTO);
-
-                if(false === $isHandle && true === $isAddMessage)
+                /** Присваиваем значения по умолчанию для нового тикета */
+                if(false === ($supportEvent instanceof SupportEvent))
                 {
-                    $isHandle = true;
+                    /** Присваиваем токен для последующего поиска */
+                    $SupportDTO->getToken()->setValue($YaMarketTokenUid);
+
+                    /** Присваиваем приоритет сообщения "высокий", так как это сообщение от пользователя */
+                    $SupportDTO->setPriority(new SupportPriority(SupportPriorityLow::PARAM));
+
+
+                    $SupportInvariableDTO = new SupportInvariableDTO()
+                        ->setType(new TypeProfileUid(TypeProfileYandexMessageSupport::TYPE)) // TypeProfileYandexMessageSupport::TYPE
+                        ->setTicket($ticketId)                                       //  Id тикета
+                        ->setTitle(sprintf('Заказ #%s', $chat->getOrder()));  // Тема сообщения
+
+                    /**
+                     * Получаем профиль пользователя по идентификатору заказа и присваиваем региону
+                     */
+
+                    $OrderEvent = $this->CurrentOrderEventByNumberRepository->find('Y-'.$chat->getOrder());
+
+                    if($OrderEvent instanceof OrderEvent)
+                    {
+                        $SupportInvariableDTO->setProfile($OrderEvent->getOrderProfile()); // Профиль по заказу
+                    }
+
+                    /** Сохраняем данные SupportInvariableDTO в Support */
+                    $SupportDTO->setInvariable($SupportInvariableDTO);
                 }
-            }
 
-            if($isHandle)
-            {
-                /** Сохраняем в БД */
-                $handle = $this->supportHandler->handle($SupportDTO);
+                /** Присваиваем статус "Открытый", так как сообщение еще не прочитано   */
+                $SupportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM));
 
-                if(false === ($handle instanceof Support))
+                $isHandle = false;
+
+                foreach($listMessages as $listMessage)
                 {
-                    $this->logger->critical(
-                        sprintf('yandex-support: Ошибка %s при обновлении чата', $handle),
-                        [self::class.':'.__LINE__]
-                    );
+                    /** Пропускаем, если сообщение системное  */
+                    if($listMessage->getSender() === 'MARKET')
+                    {
+                        continue;
+                    }
+
+                    $DeduplicatorMessage = $this->deduplicator
+                        ->namespace('yandex-support')
+                        ->expiresAfter('1 day')
+                        ->deduplication([$listMessage->getExternalId(), self::class]);
+
+                    if($DeduplicatorMessage->isExecuted())
+                    {
+                        continue;
+                    }
+
+                    /** Если такое сообщение уже есть в БД, то пропускаем */
+                    $messageExist = $this->findExistMessage
+                        ->external($listMessage->getExternalId())
+                        ->exist();
+
+                    if($messageExist)
+                    {
+                        continue;
+                    }
+
+                    /**
+                     * SupportMessageDTO
+                     */
+
+                    $SupportMessageDTO = new SupportMessageDTO();
+
+                    $SupportMessageDTO
+                        ->setExternal($listMessage->getExternalId())    // Внешний id сообщения
+                        ->setName($listMessage->getSender())            // Имя отправителя сообщения
+                        ->setMessage($listMessage->getText())           // Текст сообщения
+                        ->setDate($listMessage->getCreated())           // Дата сообщения
+                    ;
+
+                    /** Если это сообщение изначально наше, то сохраняем как 'out' */
+                    $listMessage->getSender() === 'PARTNER' ?
+                        $SupportMessageDTO->setOutMessage() :
+                        $SupportMessageDTO->setInMessage();
+
+                    /** Сохраняем данные SupportMessageDTO в Support */
+                    $isAddMessage = $SupportDTO->addMessage($SupportMessageDTO);
+
+                    if(false === $isHandle && true === $isAddMessage)
+                    {
+                        $isHandle = true;
+                    }
+
+                    $DeduplicatorMessage->save();
                 }
+
+                if($isHandle)
+                {
+                    /** Сохраняем в БД */
+                    $handle = $this->supportHandler->handle($SupportDTO);
+
+                    if(false === ($handle instanceof Support))
+                    {
+                        $this->logger->critical(
+                            sprintf('yandex-support: Ошибка %s при обновлении чата', $handle),
+                            [self::class.':'.__LINE__],
+                        );
+                    }
+                }
+
+                $DeduplicatorTicket->save();
             }
         }
 
