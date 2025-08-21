@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2024.  Baks.dev <admin@baks.dev>
+ *  Copyright 2025.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -47,16 +47,18 @@ final readonly class YandexGetNewMessagesHandler
             ->onlyActiveToken()
             ->findAll();
 
-        if($profiles->valid())
+        if(false === $profiles->valid())
         {
-            foreach($profiles as $profile)
-            {
-                $this->messageDispatch->dispatch(
-                    message: new NewYandexSupportMessage($profile),
-                    stamps: [new MessageDelay('5 seconds')],
-                    transport: 'yandex-support',
-                );
-            }
+            return;
+        }
+
+        foreach($profiles as $profile)
+        {
+            $this->messageDispatch->dispatch(
+                message: new NewYandexSupportMessage($profile),
+                stamps: [new MessageDelay('5 seconds')],
+                transport: $profile.'-low',
+            );
         }
     }
 }
