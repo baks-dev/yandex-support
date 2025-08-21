@@ -165,11 +165,14 @@ final readonly class NewYandexSupportHandler
                      * Получаем профиль пользователя по идентификатору заказа и присваиваем региону
                      */
 
-                    $OrderEvent = $this->CurrentOrderEventByNumberRepository->find('Y-'.$chat->getOrder());
-
-                    if($OrderEvent instanceof OrderEvent)
+                    if(false === is_null($chat->getOrder()))
                     {
-                        $SupportInvariableDTO->setProfile($OrderEvent->getOrderProfile()); // Профиль по заказу
+                        $OrderEvent = $this->CurrentOrderEventByNumberRepository->find('Y-'.$chat->getOrder());
+
+                        if($OrderEvent instanceof OrderEvent)
+                        {
+                            $SupportInvariableDTO->setProfile($OrderEvent->getOrderProfile()); // Профиль по заказу
+                        }
                     }
 
                     /** Сохраняем данные SupportInvariableDTO в Support */
