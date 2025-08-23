@@ -159,7 +159,7 @@ final readonly class NewYandexSupportHandler
                     $SupportInvariableDTO = new SupportInvariableDTO()
                         ->setType(new TypeProfileUid(TypeProfileYandexMessageSupport::TYPE)) // TypeProfileYandexMessageSupport::TYPE
                         ->setTicket($ticketId)                                       //  Id тикета
-                        ->setTitle(sprintf('Заказ #%s', $chat->getOrder()));  // Тема сообщения
+                        ->setTitle(is_null($chat->getOrder()) ? 'Без темы' : sprintf('Заказ #%s', $chat->getOrder()));  // Тема сообщения
 
                     /**
                      * Получаем профиль пользователя по идентификатору заказа и присваиваем региону
