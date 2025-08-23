@@ -56,7 +56,7 @@ final class YandexListMessagesDTO
     private DateTimeImmutable $created;
 
 
-    public function __construct(int $orderId, array $data)
+    public function __construct(?int $orderId, array $data)
     {
         $this->order = $orderId;
         $this->externalId = $data['messageId'];
@@ -80,7 +80,6 @@ final class YandexListMessagesDTO
                 $result [] = sprintf('<a href="%s" target="_blank" />', $payload['url']).$payload['name'].'<a/>';
             }
         }
-
 
         return !empty($result) ? $text.' '.implode(' ', $result) : trim($text);
     }
