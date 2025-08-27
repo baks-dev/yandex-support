@@ -70,7 +70,7 @@ class YandexGetChatsInfoRequestTest extends KernelTestCase
         $chatsInfo = $YandexGetChatsInfoRequest->findAll();
 
 
-        //                 dd(iterator_to_array($chatsInfo));
+        dd(iterator_to_array($chatsInfo));
 
         if($chatsInfo->valid())
         {

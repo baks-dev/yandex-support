@@ -81,6 +81,9 @@ final class YandexListMessagesDTO
             }
         }
 
+        /** Если в сообщении находится ссылка без текста - присваиваем ссылку */
+        $text = str_replace('/><a/>', 'class="ms-3" />Ссылка<a/>', $text);
+
         return !empty($result) ? $text.' '.implode(' ', $result) : trim($text);
     }
 
