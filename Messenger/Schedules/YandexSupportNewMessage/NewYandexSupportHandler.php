@@ -28,6 +28,7 @@ namespace BaksDev\Yandex\Support\Messenger\Schedules\YandexSupportNewMessage;
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Orders\Order\Entity\Event\OrderEvent;
 use BaksDev\Orders\Order\Repository\CurrentOrderNumber\CurrentOrderEventByNumberInterface;
+use BaksDev\Orders\Order\Repository\SearchProfileByNumber\SearchProfileByNumberInterface;
 use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Repository\FindExistMessage\FindExistExternalMessageByIdInterface;
@@ -41,10 +42,12 @@ use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportHandler;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use BaksDev\Yandex\Market\Repository\YaMarketTokensByProfile\YaMarketTokensByProfileInterface;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ChatsInfo\YandexChatsDTO;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ChatsInfo\YandexGetChatsInfoRequest;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ListMessages\YandexGetListMessagesRequest;
+use BaksDev\Yandex\Support\Api\Messenger\Get\ListMessages\YandexListMessagesDTO;
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexMessageSupport;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
@@ -62,7 +65,8 @@ final readonly class NewYandexSupportHandler
         private YandexGetListMessagesRequest $messagesRequest,
         private DeduplicatorInterface $deduplicator,
         private YaMarketTokensByProfileInterface $YaMarketTokensByProfile,
-        private CurrentOrderEventByNumberInterface $CurrentOrderEventByNumberRepository
+        private CurrentOrderEventByNumberInterface $CurrentOrderEventByNumberRepository,
+        private SearchProfileByNumberInterface $SearchProfileByNumberRepository
     ) {}
 
 
@@ -146,6 +150,7 @@ final readonly class NewYandexSupportHandler
                     ? $supportEvent->getDto(SupportDTO::class)
                     : new SupportDTO(); // done
 
+
                 /** Присваиваем значения по умолчанию для нового тикета */
                 if(false === ($supportEvent instanceof SupportEvent))
                 {
@@ -178,6 +183,37 @@ final readonly class NewYandexSupportHandler
                     /** Сохраняем данные SupportInvariableDTO в Support */
                     $SupportDTO->setInvariable($SupportInvariableDTO);
                 }
+
+
+                /** @var array<YandexListMessagesDTO> $listMessages */
+                $listMessages = iterator_to_array($listMessages);
+
+                /**
+                 * Если сообщение не адресовано профилю - пробуем найти в тексте идентификаторы заказа
+                 */
+
+                $UserProfileUid = $SupportDTO->getInvariable()?->getProfile();
+
+                if(false === ($UserProfileUid instanceof UserProfileUid))
+                {
+                    foreach($listMessages as $search)
+                    {
+                        // Для формата с дефисами: XXXXXXXXXX-XXXX-X
+                        if(preg_match('/\b\d{11}\b/', $search->getText(), $matches))
+                        {
+                            /** Пробуем определить профиль по идентификатору заказа */
+                            $foundValue = $matches[0];
+
+                            $UserProfileUid = $this->SearchProfileByNumberRepository->find($foundValue);
+
+                            if($UserProfileUid instanceof UserProfileUid)
+                            {
+                                $SupportDTO->getInvariable()?->setProfile($UserProfileUid);
+                            }
+                        }
+                    }
+                }
+
 
                 /** Присваиваем статус "Открытый", так как сообщение еще не прочитано   */
                 $SupportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM));
