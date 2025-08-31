@@ -30,14 +30,12 @@ use BaksDev\Yandex\Market\Type\Authorization\YaMarketAuthorizationToken;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ListMessages\YandexGetListMessagesRequest;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ListMessages\YandexListMessagesDTO;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\Group;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
-/**
- * @group yandex-support
- *
- */
 #[When(env: 'test')]
+#[Group('yandex-support')]
 class YandexGetListMessagesRequestTest extends KernelTestCase
 {
     private static YaMarketAuthorizationToken $authorization;

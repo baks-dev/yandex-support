@@ -30,14 +30,12 @@ use BaksDev\Yandex\Market\Type\Authorization\YaMarketAuthorizationToken;
 use BaksDev\Yandex\Support\Api\Review\Get\GetListReviews\YandexGetListReviewsRequest;
 use BaksDev\Yandex\Support\Api\Review\Get\GetListReviews\YandexReviewDTO;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\Group;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
-/**
- * @group yandex-support
- *
- */
 #[When(env: 'test')]
+#[Group('yandex-support')]
 class YandexGetListReviewsRequestTest extends KernelTestCase
 {
 
