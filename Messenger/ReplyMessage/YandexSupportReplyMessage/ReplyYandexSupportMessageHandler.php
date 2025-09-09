@@ -37,6 +37,7 @@ use BaksDev\Support\UseCase\Admin\New\Invariable\SupportInvariableDTO;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
 use BaksDev\Yandex\Market\Repository\YaMarketTokensByProfile\YaMarketTokensByProfileInterface;
+use BaksDev\Yandex\Market\Type\Id\YaMarketTokenUid;
 use BaksDev\Yandex\Support\Api\Messenger\Post\SendMessage\YandexSendMessageRequest;
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexMessageSupport;
 use DateInterval;
@@ -53,7 +54,6 @@ final readonly class ReplyYandexSupportMessageHandler
         private CurrentSupportEventInterface $currentSupportEvent,
         private MessageDispatchInterface $messageDispatch,
         private DeduplicatorInterface $deduplicator,
-        private YaMarketTokensByProfileInterface $YaMarketTokensByProfile,
     ) {}
 
     public function __invoke(SupportMessage $message): void
@@ -114,20 +114,22 @@ final readonly class ReplyYandexSupportMessageHandler
             return;
         }
 
-        /** Получаем все токены профиля */
+        /** Получаем токен сообщения */
+        $YaMarketToken = $SupportEvent->getToken()?->getValue();
 
-        $tokensByProfile = $this->YaMarketTokensByProfile
-            ->findAll($SupportInvariableDTO->getProfile());
-
-        if(false === $tokensByProfile || false === $tokensByProfile->valid())
+        if(empty($YaMarketToken))
         {
+            $this->logger->critical(
+                sprintf('ozon-support: Ошибка получения токена сообщения : %s', $message->getId()),
+                [self::class.':'.__LINE__],
+            );
+
             return;
         }
 
-        $YaMarketTokenUid = $tokensByProfile->current();
-
-
         /** Отправка сообщения */
+        $YaMarketTokenUid = new YaMarketTokenUid($YaMarketToken);
+
         $send = $this->messageRequest
             ->forTokenIdentifier($YaMarketTokenUid)
             ->yandexChat($SupportInvariableDTO->getTicket())

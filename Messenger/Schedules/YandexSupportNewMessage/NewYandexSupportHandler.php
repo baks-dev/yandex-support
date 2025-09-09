@@ -154,12 +154,10 @@ final readonly class NewYandexSupportHandler
                 /** Присваиваем значения по умолчанию для нового тикета */
                 if(false === ($supportEvent instanceof SupportEvent))
                 {
-                    /** Присваиваем токен для последующего поиска */
-                    $SupportDTO->getToken()->setValue($YaMarketTokenUid);
-
                     /** Присваиваем приоритет сообщения "высокий", так как это сообщение от пользователя */
-                    $SupportDTO->setPriority(new SupportPriority(SupportPriorityLow::PARAM));
-
+                    $SupportDTO
+                        ->setPriority(new SupportPriority(SupportPriorityLow::PARAM))
+                        ->getToken()->setValue($YaMarketTokenUid);
 
                     $SupportInvariableDTO = new SupportInvariableDTO()
                         ->setType(new TypeProfileUid(TypeProfileYandexMessageSupport::TYPE)) // TypeProfileYandexMessageSupport::TYPE

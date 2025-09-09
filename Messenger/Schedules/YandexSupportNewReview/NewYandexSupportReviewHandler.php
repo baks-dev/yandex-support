@@ -144,7 +144,9 @@ final readonly class NewYandexSupportReviewHandler
             if(false === $supportEvent)
             {
                 /** Присваиваем приоритет сообщения "low" */
-                $SupportDTO->setPriority(new SupportPriority(SupportPriorityLow::PARAM));
+                $SupportDTO
+                    ->setPriority(new SupportPriority(SupportPriorityLow::PARAM))
+                    ->getToken()->setValue($YaMarketTokenUid);
 
                 /** SupportInvariableDTO */
                 $SupportInvariableDTO = new SupportInvariableDTO();
