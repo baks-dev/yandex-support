@@ -205,6 +205,11 @@ final readonly class NewYandexSupportReviewHandler
                         continue;
                     }
 
+                    if(empty($comment->getText()))
+                    {
+                        continue;
+                    }
+
                     /** @var SupportMessageDTO $SupportMessageDTO */
                     $SupportMessageDTO = new SupportMessageDTO();
 
