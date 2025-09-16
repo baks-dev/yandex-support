@@ -190,8 +190,32 @@ final readonly class NewYandexSupportHandler
                  * Если сообщение не адресовано профилю - пробуем найти в тексте идентификаторы заказа
                  */
 
+
                 $UserProfileUid = $SupportDTO->getInvariable()?->getProfile();
 
+                /** Пробуем найти по заголовку */
+                if(false === ($UserProfileUid instanceof UserProfileUid))
+                {
+                    // Для формата с дефисами: XXXXXXXXXX-XXXX-X
+                    if(preg_match('/\b\d{11}\b/', $SupportDTO->getInvariable()?->getTitle(), $matches))
+                    {
+                        /** Пробуем определить профиль по идентификатору заказа */
+                        $foundValue = $matches[0];
+
+                        $UserProfileUid = $this->SearchProfileByNumberRepository->find($foundValue);
+
+                        if($UserProfileUid instanceof UserProfileUid)
+                        {
+                            $SupportDTO->getInvariable()?->setProfile($UserProfileUid);
+                        }
+                    }
+
+                }
+
+
+                $UserProfileUid = $SupportDTO->getInvariable()?->getProfile();
+
+                /** Пробуем найти по тексту */
                 if(false === ($UserProfileUid instanceof UserProfileUid))
                 {
                     foreach($listMessages as $search)
