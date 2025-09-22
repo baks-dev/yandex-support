@@ -121,6 +121,11 @@ final readonly class NewYandexSupportReviewHandler
         /** @var YandexReviewDTO $review */
         foreach($reviews as $review)
         {
+            if(empty($review->getText()))
+            {
+                continue;
+            }
+
             /** Получаем ID чата с отзывом  */
             $ticketId = $review->getReviewId();
 
