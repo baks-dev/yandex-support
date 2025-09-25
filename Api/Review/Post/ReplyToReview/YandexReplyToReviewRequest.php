@@ -63,14 +63,15 @@ final class YandexReplyToReviewRequest extends YandexMarket
             "comment" => [
                 //                "id" => 0,        // Идентификатор комментария, который нужно изменить.
                 //                "parentId" => 0, // Идентификатор родительского комментария, на который нужно ответить.
-                "text" => $this->message
-            ]
+                "text" => $this->message,
+            ],
         ];
     }
 
 
     /**
      * Добавляет новый комментарий магазина или изменяет комментарий, который магазин оставлял ранее.
+     *
      * @see https://yandex.ru/dev/market/partner-api/doc/ru/reference/goods-feedback/updateGoodsFeedbackComment
      */
     public function send(): bool
@@ -86,8 +87,8 @@ final class YandexReplyToReviewRequest extends YandexMarket
                 'POST',
                 sprintf('/businesses/%s/goods-feedback/comments/update', $this->getBusiness()),
                 [
-                    "json" => $this->body()
-                ]
+                    "json" => $this->body(),
+                ],
             );
 
 
@@ -95,21 +96,18 @@ final class YandexReplyToReviewRequest extends YandexMarket
 
         if($response->getStatusCode() !== 200)
         {
-            foreach($content['errors'] as $error)
-                $this->logger->critical(
-                    sprintf('yandex-support:ошибка отправки сообщения, %s, %s', $error['code'], $error['message']),
-                    [self::class.':'.__LINE__]
-                );
+            $this->logger->critical(
+                sprintf('yandex-support: ошибка %s отправке сообщения на отзыв', $response->getStatusCode()),
+                [$this->body(), $content, self::class.':'.__LINE__],
+            );
 
             return false;
         }
 
         if(empty($content) && $content['result']['status'] !== 'PUBLISHED')
         {
-            $this->logger->critical(
-                'yandex-support:сообщение не опубликовано',
-                [self::class.':'.__LINE__]
-            );
+            $this->logger->critical('yandex-support: сообщение не удалось опубликовать', [self::class.':'.__LINE__]);
+
             return false;
         }
 
