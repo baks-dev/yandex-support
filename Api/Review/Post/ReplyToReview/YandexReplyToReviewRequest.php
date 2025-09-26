@@ -101,6 +101,12 @@ final class YandexReplyToReviewRequest extends YandexMarket
                 [$this->body(), $content, self::class.':'.__LINE__],
             );
 
+            /** Отзывы не найдены */
+            if(current($content['errors'])['code'] === 'NOT_FOUND')
+            {
+                return true;
+            }
+
             return false;
         }
 
