@@ -54,7 +54,7 @@ final class YandexSendMessageRequest extends YandexMarket
     private function query(): array
     {
         return [
-            'chatId' => $this->yandexChat
+            'chatId' => $this->yandexChat,
         ];
     }
 
@@ -62,13 +62,14 @@ final class YandexSendMessageRequest extends YandexMarket
     private function body(): array
     {
         return [
-            'message' => $this->message
+            'message' => $this->message,
         ];
     }
 
 
     /**
      * Отправляет сообщение в чат с покупателем.
+     *
      * @see https://yandex.ru/dev/market/partner-api/doc/ru/reference/chats/sendMessageToChat
      */
     public function send(): bool
@@ -85,8 +86,8 @@ final class YandexSendMessageRequest extends YandexMarket
                 sprintf('/businesses/%s/chats/message', $this->getBusiness()),
                 [
                     "query" => $this->query(),
-                    "json" => $this->body()
-                ]
+                    "json" => $this->body(),
+                ],
             );
 
 
@@ -94,15 +95,20 @@ final class YandexSendMessageRequest extends YandexMarket
 
         if($response->getStatusCode() !== 200)
         {
-            foreach($content['errors'] as $error)
-                $this->logger->critical(
-                    sprintf('yandex-support:ошибка отправки сообщения, %s, %s', $error['code'], $error['message']),
-                    [self::class.':'.__LINE__, $this->query(), $this->body()]
-                );
+            $this->logger->critical(
+                sprintf('yandex-support: ошибка %s отправки сообщения', $response->getStatusCode()),
+                [self::class.':'.__LINE__, $content, $this->query(), $this->body()],
+            );
+
+            $error = current($content['errors']);
+
+            if(str_contains(haystack: $error['message'], needle: 'closed'))
+            {
+                return true;
+            }
 
             return false;
         }
-
 
         if(empty($content))
         {
