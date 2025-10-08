@@ -90,7 +90,6 @@ final class YandexSendMessageRequest extends YandexMarket
                 ],
             );
 
-
         $content = $response->toArray(false);
 
         if($response->getStatusCode() !== 200)
