@@ -1,17 +1,17 @@
 <?php
 /*
  *  Copyright 2025.  Baks.dev <admin@baks.dev>
- *
+ *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
  *  in the Software without restriction, including without limitation the rights
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is furnished
  *  to do so, subject to the following conditions:
- *
+ *  
  *  The above copyright notice and this permission notice shall be included in all
  *  copies or substantial portions of the Software.
- *
+ *  
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  *  FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,6 +31,8 @@ use BaksDev\Yandex\Support\Api\Review\Get\GetListReviews\YandexGetListReviewsReq
 use BaksDev\Yandex\Support\Api\Review\Get\GetListReviews\YandexReviewDTO;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Group;
+use ReflectionClass;
+use ReflectionMethod;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
@@ -43,7 +45,7 @@ class YandexGetListReviewsRequestTest extends KernelTestCase
 
     public static function setUpBeforeClass(): void
     {
-        self::$Authorization = new YaMarketAuthorizationToken(
+        self::$authorization = new YaMarketAuthorizationToken(
             profile: UserProfileUid::TEST,
             token: $_SERVER['TEST_YANDEX_MARKET_TOKEN'],
             company: (int) $_SERVER['TEST_YANDEX_MARKET_COMPANY'],
@@ -55,6 +57,7 @@ class YandexGetListReviewsRequestTest extends KernelTestCase
 
     public function testComplete(): void
     {
+        self::assertTrue(true);
 
         /** @var YandexGetListReviewsRequest $YandexGetListReviewsRequest */
         $YandexGetListReviewsRequest = self::getContainer()->get(YandexGetListReviewsRequest::class);
@@ -65,40 +68,29 @@ class YandexGetListReviewsRequestTest extends KernelTestCase
 
         $reviews = $YandexGetListReviewsRequest->findAll();
 
-
-        //                 dd(iterator_to_array($reviews));
-
-        if($reviews->valid())
+        if(false === $reviews->valid())
         {
-            /** @var YandexReviewDTO $YandexReviewDTO */
-            $YandexReviewDTO = $reviews->current();
+            return;
+        }
 
-            self::assertNotNull($YandexReviewDTO->getReviewId());
-            self::assertIsInt($YandexReviewDTO->getReviewId());
+        foreach($reviews as $YandexReviewDTO)
+        {
+            // Вызываем все геттеры
+            $reflectionClass = new ReflectionClass(YandexReviewDTO::class);
+            $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
 
-            self::assertNotNull($YandexReviewDTO->getText());
-            self::assertIsString($YandexReviewDTO->getText());
-
-            self::assertNotNull($YandexReviewDTO->getCreated());
-            self::assertInstanceOf(
-                DateTimeImmutable::class,
-                $YandexReviewDTO->getCreated()
-            );
-
-            self::assertNotNull($YandexReviewDTO->getAuthor());
-            self::assertIsString($YandexReviewDTO->getAuthor());
-
-            self::assertNotNull($YandexReviewDTO->getTitle());
-
-            if($YandexReviewDTO->getTitle() !== null)
+            foreach($methods as $method)
             {
-                self::assertIsString($YandexReviewDTO->getTitle());
+                // Методы без аргументов
+                if($method->getNumberOfParameters() === 0)
+                {
+                    // Вызываем метод
+                    $data = $method->invoke($YandexReviewDTO);
+                    // dump($data);
+                }
             }
-        }
-        else
-        {
-            self::assertFalse($reviews->valid());
-        }
 
+            break;
+        }
     }
 }

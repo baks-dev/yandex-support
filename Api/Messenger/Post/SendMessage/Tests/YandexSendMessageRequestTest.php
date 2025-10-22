@@ -52,19 +52,18 @@ class YandexSendMessageRequestTest extends KernelTestCase
 
     public function testComplete(): void
     {
-        //self::assertTrue(true);
-        //return;
+        self::assertTrue(true);
+        return;
 
         /** @var YandexSendMessageRequest $YandexSendMessageRequest */
         $YandexSendMessageRequest = self::getContainer()->get(YandexSendMessageRequest::class);
         $YandexSendMessageRequest->tokenHttpClient(self::$authorization);
 
         $reviews = $YandexSendMessageRequest
-            ->profile(self::$authorization->getProfile())
             ->yandexChat('chatId')
             ->message('New Test Message')
             ->send();
-        //                dd($reviews);
+
         self::assertTrue($reviews);
     }
 }

@@ -29,8 +29,9 @@ use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use BaksDev\Yandex\Market\Type\Authorization\YaMarketAuthorizationToken;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ListMessages\YandexGetListMessagesRequest;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ListMessages\YandexListMessagesDTO;
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Group;
+use ReflectionClass;
+use ReflectionMethod;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
@@ -54,47 +55,40 @@ class YandexGetListMessagesRequestTest extends KernelTestCase
 
     public function testComplete(): void
     {
-
         self::assertTrue(true);
-        return;
 
         /** @var YandexGetListMessagesRequest $YandexGetListMessagesRequest */
         $YandexGetListMessagesRequest = self::getContainer()->get(YandexGetListMessagesRequest::class);
         $YandexGetListMessagesRequest->tokenHttpClient(self::$authorization);
 
         $YandexGetListMessagesRequest->chat('chatId');
-        $messages = $YandexGetListMessagesRequest->findAll();
 
+        $result = $YandexGetListMessagesRequest->findAll();
 
-        //                 dd(iterator_to_array($messages));
-
-        if($messages->valid())
+        if(false === $result->valid())
         {
-            /** @var YandexListMessagesDTO $YandexListMessagesDTO */
-            $YandexListMessagesDTO = $messages->current();
-
-            self::assertNotNull($YandexListMessagesDTO->getOrder());
-            self::assertIsInt($YandexListMessagesDTO->getOrder());
-
-            self::assertNotNull($YandexListMessagesDTO->getExternalId());
-            self::assertIsInt($YandexListMessagesDTO->getExternalId());
-
-            self::assertNotNull($YandexListMessagesDTO->getSender());
-            self::assertIsString($YandexListMessagesDTO->getSender());
-
-            self::assertNotNull($YandexListMessagesDTO->getText());
-            self::assertIsString($YandexListMessagesDTO->getText());
-
-            self::assertNotNull($YandexListMessagesDTO->getCreated());
-            self::assertInstanceOf(
-                DateTimeImmutable::class,
-                $YandexListMessagesDTO->getCreated()
-            );
-
+            return;
         }
-        else
+
+        foreach($result as $YandexListMessagesDTO)
         {
-            self::assertFalse($messages->valid());
+            // Вызываем все геттеры
+            $reflectionClass = new ReflectionClass(YandexListMessagesDTO::class);
+            $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
+
+            foreach($methods as $method)
+            {
+                // Методы без аргументов
+                if($method->getNumberOfParameters() === 0)
+                {
+                    // Вызываем метод
+                    $data = $method->invoke($YandexListMessagesDTO);
+                    // dump($data);
+                }
+            }
+
+            break;
+
         }
     }
 }

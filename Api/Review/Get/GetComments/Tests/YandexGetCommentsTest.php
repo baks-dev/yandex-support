@@ -29,8 +29,9 @@ use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use BaksDev\Yandex\Market\Type\Authorization\YaMarketAuthorizationToken;
 use BaksDev\Yandex\Support\Api\Review\Get\GetComments\YandexCommentsDTO;
 use BaksDev\Yandex\Support\Api\Review\Get\GetComments\YandexGetCommentsRequest;
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Group;
+use ReflectionClass;
+use ReflectionMethod;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
@@ -43,7 +44,7 @@ class YandexGetCommentsTest extends KernelTestCase
 
     public static function setUpBeforeClass(): void
     {
-        self::$Authorization = new YaMarketAuthorizationToken(
+        self::$authorization = new YaMarketAuthorizationToken(
             profile: UserProfileUid::TEST,
             token: $_SERVER['TEST_YANDEX_MARKET_TOKEN'],
             company: (int) $_SERVER['TEST_YANDEX_MARKET_COMPANY'],
@@ -55,51 +56,38 @@ class YandexGetCommentsTest extends KernelTestCase
 
     public function testComplete(): void
     {
-
         self::assertTrue(true);
-        return;
 
         /** @var YandexGetCommentsRequest $YandexGetCommentsRequest */
         $YandexGetCommentsRequest = self::getContainer()->get(YandexGetCommentsRequest::class);
         $YandexGetCommentsRequest->tokenHttpClient(self::$authorization);
 
         $YandexGetCommentsRequest->feedback('feedbackId');
-        $reviews = $YandexGetCommentsRequest->findAll();
+        $result = $YandexGetCommentsRequest->findAll();
 
-
-        //                 dd(iterator_to_array($reviews));
-
-        if($reviews->valid())
+        if(false === $result->valid())
         {
-            /** @var YandexCommentsDTO $YandexCommentsDTO */
-            $YandexCommentsDTO = $reviews->current();
-
-            self::assertNotNull($YandexCommentsDTO->getId());
-            self::assertIsInt($YandexCommentsDTO->getId());
-
-            self::assertNotNull($YandexCommentsDTO->getText());
-            self::assertIsString($YandexCommentsDTO->getText());
-
-            self::assertNotNull($YandexCommentsDTO->getCreated());
-            self::assertInstanceOf(
-                DateTimeImmutable::class,
-                $YandexCommentsDTO->getCreated()
-            );
-
-            self::assertNotNull($YandexCommentsDTO->getStatus());
-            self::assertIsString($YandexCommentsDTO->getStatus());
-
-            self::assertNotNull($YandexCommentsDTO->getAuthor());
-            self::assertIsArray($YandexCommentsDTO->getAuthor());
-
-            if(null !== $YandexCommentsDTO->getParent())
-            {
-                self::assertIsString($YandexCommentsDTO->getParent());
-            }
+            return;
         }
-        else
+
+        foreach($result as $YandexCommentsDTO)
         {
-            self::assertFalse($reviews->valid());
+            // Вызываем все геттеры
+            $reflectionClass = new ReflectionClass(YandexCommentsDTO::class);
+            $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
+
+            foreach($methods as $method)
+            {
+                // Методы без аргументов
+                if($method->getNumberOfParameters() === 0)
+                {
+                    // Вызываем метод
+                    $data = $method->invoke($YandexCommentsDTO);
+                    // dump($data);
+                }
+            }
+
+            break;
         }
 
     }

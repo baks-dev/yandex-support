@@ -194,7 +194,10 @@ final readonly class NewYandexSupportHandler
                 $UserProfileUid = $SupportDTO->getInvariable()?->getProfile();
 
                 /** Пробуем найти по заголовку */
-                if(false === ($UserProfileUid instanceof UserProfileUid))
+                if(
+                    false === ($UserProfileUid instanceof UserProfileUid)
+                    && false === empty($SupportDTO->getInvariable()?->getTitle())
+                )
                 {
                     // Для формата с дефисами: XXXXXXXXXX-XXXX-X
                     if(preg_match('/\b\d{11}\b/', $SupportDTO->getInvariable()?->getTitle(), $matches))
@@ -220,6 +223,11 @@ final readonly class NewYandexSupportHandler
                 {
                     foreach($listMessages as $search)
                     {
+                        if(empty($search->getText()))
+                        {
+                            continue;
+                        }
+
                         // Для формата с дефисами: XXXXXXXXXX-XXXX-X
                         if(preg_match('/\b\d{11}\b/', $search->getText(), $matches))
                         {

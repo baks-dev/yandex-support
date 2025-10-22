@@ -40,7 +40,7 @@ class YandexReplyToReviewRequestTest extends KernelTestCase
 
     public static function setUpBeforeClass(): void
     {
-        self::$Authorization = new YaMarketAuthorizationToken(
+        self::$authorization = new YaMarketAuthorizationToken(
             profile: UserProfileUid::TEST,
             token: $_SERVER['TEST_YANDEX_MARKET_TOKEN'],
             company: (int) $_SERVER['TEST_YANDEX_MARKET_COMPANY'],

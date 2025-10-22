@@ -66,7 +66,7 @@ final readonly class YandexChatsDTO
     public function __construct(array $data)
     {
         $this->id = $data['chatId'];
-        $this->order = $data['orderId'];
+        $this->order = $data['orderId'] ?? null;
         $this->status = $data['status'];
         $this->type = $data['type'];
         $this->created = (new DateTimeImmutable($data['createdAt']));

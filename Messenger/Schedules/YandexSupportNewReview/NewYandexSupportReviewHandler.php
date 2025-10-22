@@ -42,7 +42,6 @@ use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
 use BaksDev\Yandex\Market\Repository\YaMarketTokensByProfile\YaMarketTokensByProfileInterface;
 use BaksDev\Yandex\Support\Api\Review\Get\GetComments\YandexGetCommentsRequest;
 use BaksDev\Yandex\Support\Api\Review\Get\GetListReviews\YandexGetListReviewsRequest;
-use BaksDev\Yandex\Support\Api\Review\Get\GetListReviews\YandexReviewDTO;
 use BaksDev\Yandex\Support\Schedule\YandexGetNewReview\YandexGetNewReviewSchedule;
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexReviewSupport;
 use DateInterval;
@@ -118,16 +117,15 @@ final readonly class NewYandexSupportReviewHandler
             return;
         }
 
-        /** @var YandexReviewDTO $review */
-        foreach($reviews as $review)
+        foreach($reviews as $YandexReviewDTO)
         {
-            if(empty($review->getText()))
+            if(empty($YandexReviewDTO->getText()))
             {
                 continue;
             }
 
             /** Получаем ID чата с отзывом  */
-            $ticketId = $review->getReviewId();
+            $ticketId = $YandexReviewDTO->getReviewId();
 
             /** Получаем комментарии к чату */
             $comments = $this->yandexGetCommentsRequest
@@ -159,8 +157,8 @@ final readonly class NewYandexSupportReviewHandler
                 $SupportInvariableDTO
                     //->setProfile($message->getProfile()) // Профиль
                     ->setType(new TypeProfileUid(TypeProfileYandexReviewSupport::TYPE)) // TypeProfileAvitoReviewSupport::TYPE
-                    ->setTicket($review->getReviewId()) // Id тикета
-                    ->setTitle($review->getTitle()); // Тема сообщения
+                    ->setTicket($YandexReviewDTO->getReviewId()) // Id тикета
+                    ->setTitle($YandexReviewDTO->getTitle()); // Тема сообщения
 
                 /** Сохраняем данные SupportInvariableDTO в Support */
                 $SupportDTO->setInvariable($SupportInvariableDTO);
@@ -176,20 +174,19 @@ final readonly class NewYandexSupportReviewHandler
 
             /** Если такое сообщение уже есть в БД, то пропускаем */
             $reviewExist = $this->findExistMessage
-                ->external($review->getReviewId())
+                ->external($YandexReviewDTO->getReviewId())
                 ->exist();
 
             if(false === $reviewExist)
             {
-                /** @var SupportMessageDTO $SupportMessageDTO */
                 $SupportMessageDTO = new SupportMessageDTO();
 
                 $SupportMessageDTO
-                    ->setName($review->getAuthor())         // Имя пользователя
-                    ->setMessage($review->getText())        // Текст сообщения
-                    ->setExternal($ticketId)                // Внешний (yandex) ID сообщения
-                    ->setDate($review->getCreated())        // Дата сообщения
-                    ->setInMessage();                       // Входящее сообщение
+                    ->setName($YandexReviewDTO->getAuthor())         // Имя пользователя
+                    ->setMessage($YandexReviewDTO->getText())        // Текст сообщения
+                    ->setDate($YandexReviewDTO->getCreated())        // Дата сообщения
+                    ->setExternal($ticketId)                         // Внешний (yandex) ID сообщения
+                    ->setInMessage();                                // Входящее сообщение
 
                 /** Сохраняем данные в Support */
                 $SupportDTO->addMessage($SupportMessageDTO);
@@ -222,7 +219,7 @@ final readonly class NewYandexSupportReviewHandler
                         ->setName($comment->getAuthor()['name'])  // Имя пользователя
                         ->setMessage($comment->getText())         // Текст сообщения
                         ->setExternal($comment->getId())          // Внешний (yandex) ID сообщения
-                        ->setDate($review->getCreated());         // Дата сообщения
+                        ->setDate($YandexReviewDTO->getCreated());         // Дата сообщения
 
 
                     $comment->getAuthor()['type'] === 'BUSINESS' ?

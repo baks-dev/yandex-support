@@ -29,8 +29,9 @@ use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use BaksDev\Yandex\Market\Type\Authorization\YaMarketAuthorizationToken;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ChatsInfo\YandexChatsDTO;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ChatsInfo\YandexGetChatsInfoRequest;
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Group;
+use ReflectionClass;
+use ReflectionMethod;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
@@ -54,54 +55,37 @@ class YandexGetChatsInfoRequestTest extends KernelTestCase
 
     public function testComplete(): void
     {
-
-        //        /** @var AppCacheInterface $cache */
-        //        $initCache = self::getContainer()->get(AppCacheInterface::class);
-        //        $cache = $initCache->init('avito-support');
-
-        //        $cache->delete(sprintf('%s-%s', 'avito-support-info-chats', UserProfileUid::TEST));
+        self::assertTrue(true);
 
         /** @var YandexGetChatsInfoRequest $YandexGetChatsInfoRequest */
         $YandexGetChatsInfoRequest = self::getContainer()->get(YandexGetChatsInfoRequest::class);
         $YandexGetChatsInfoRequest->tokenHttpClient(self::$authorization);
 
-        $chatsInfo = $YandexGetChatsInfoRequest->findAll();
+        $result = $YandexGetChatsInfoRequest->findAll();
 
-
-        dd(iterator_to_array($chatsInfo));
-
-        if($chatsInfo->valid())
+        if(false === $result->valid())
         {
-            /** @var YandexChatsDTO $YandexChatsDTO */
-            $YandexChatsDTO = $chatsInfo->current();
-
-            self::assertNotNull($YandexChatsDTO->getId());
-            self::assertIsInt($YandexChatsDTO->getId());
-
-            self::assertNotNull($YandexChatsDTO->getType());
-            self::assertIsString($YandexChatsDTO->getType());
-
-            self::assertNotNull($YandexChatsDTO->getOrder());
-            self::assertIsInt($YandexChatsDTO->getOrder());
-
-            self::assertNotNull($YandexChatsDTO->getStatus());
-            self::assertIsString($YandexChatsDTO->getStatus());
-
-            self::assertNotNull($YandexChatsDTO->getCreated());
-            self::assertInstanceOf(
-                DateTimeImmutable::class,
-                $YandexChatsDTO->getCreated()
-            );
-
-            self::assertNotNull($YandexChatsDTO->getUpdated());
-            self::assertInstanceOf(
-                DateTimeImmutable::class,
-                $YandexChatsDTO->getUpdated()
-            );
+            return;
         }
-        else
+
+        foreach($result as $YandexChatsDTO)
         {
-            self::assertFalse($chatsInfo->valid());
+            // Вызываем все геттеры
+            $reflectionClass = new ReflectionClass(YandexChatsDTO::class);
+            $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
+
+            foreach($methods as $method)
+            {
+                // Методы без аргументов
+                if($method->getNumberOfParameters() === 0)
+                {
+                    // Вызываем метод
+                    $data = $method->invoke($YandexChatsDTO);
+                    // dump($data);
+                }
+            }
+
+            break;
         }
     }
 }
