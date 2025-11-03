@@ -61,9 +61,7 @@ class YandexReplyToReviewRequestTest extends KernelTestCase
         $YandexReplyToReviewRequest->tokenHttpClient(self::$authorization);
 
         $reviews = $YandexReplyToReviewRequest
-            ->profile(self::$authorization->getProfile())
             ->feedback('feedbackId')
-            ->parent('parentId')
             ->message('New Test Message')
             ->send();
 
