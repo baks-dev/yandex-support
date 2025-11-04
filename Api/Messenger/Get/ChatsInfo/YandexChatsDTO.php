@@ -35,6 +35,10 @@ final readonly class YandexChatsDTO
     /** Идентификатор заказа. */
     private ?int $order;
 
+    /** Публичное имя покупателя в Яндекс Паспорте, которое отображается в сервисах Яндекса. */
+    private ?string $name;
+
+
     /**
      * Статус чата:
      *
@@ -66,11 +70,19 @@ final readonly class YandexChatsDTO
     public function __construct(array $data)
     {
         $this->id = $data['chatId'];
-        $this->order = $data['orderId'] ?? null;
+
         $this->status = $data['status'];
         $this->type = $data['type'];
         $this->created = (new DateTimeImmutable($data['createdAt']));
         $this->updated = (new DateTimeImmutable($data['updatedAt']));
+
+        $context = $data['context'];
+
+        /** Информация о заказе или возврате, по которому начат чат. */
+        $this->order = $context['orderId'] ?? null;
+
+        $this->name = $context['customer']['name'] ?? null;
+
     }
 
     public function getId(): int
@@ -101,5 +113,10 @@ final readonly class YandexChatsDTO
     public function getUpdated(): DateTimeImmutable
     {
         return $this->updated;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
     }
 }

@@ -286,7 +286,7 @@ final readonly class NewYandexSupportHandler
 
                     $SupportMessageDTO
                         ->setExternal($listMessage->getExternalId())    // Внешний id сообщения
-                        ->setName($listMessage->getSender())            // Имя отправителя сообщения
+                        ->setName($listMessage->getSender().($chat->getName() ? ': '.$chat->getName() : ''))            // Имя отправителя сообщения
                         ->setMessage($listMessage->getText())           // Текст сообщения
                         ->setDate($listMessage->getCreated())           // Дата сообщения
                     ;

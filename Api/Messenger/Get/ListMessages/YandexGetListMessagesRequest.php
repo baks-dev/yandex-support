@@ -101,7 +101,7 @@ final class YandexGetListMessagesRequest extends YandexMarket
 
         foreach($content['result']['messages'] as $item)
         {
-            yield new YandexListMessagesDTO($content['result']['orderId'], $item);
+            yield new YandexListMessagesDTO(($content['result']['context']['orderId'] ?? null), $item);
         }
     }
 }

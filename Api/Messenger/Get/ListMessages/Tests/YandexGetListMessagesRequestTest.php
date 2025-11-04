@@ -27,6 +27,8 @@ namespace BaksDev\Yandex\Support\Api\Messenger\Get\ListMessages\Tests;
 
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use BaksDev\Yandex\Market\Type\Authorization\YaMarketAuthorizationToken;
+use BaksDev\Yandex\Support\Api\Messenger\Get\ChatsInfo\YandexChatsDTO;
+use BaksDev\Yandex\Support\Api\Messenger\Get\ChatsInfo\YandexGetChatsInfoRequest;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ListMessages\YandexGetListMessagesRequest;
 use BaksDev\Yandex\Support\Api\Messenger\Get\ListMessages\YandexListMessagesDTO;
 use PHPUnit\Framework\Attributes\Group;
@@ -57,11 +59,34 @@ class YandexGetListMessagesRequestTest extends KernelTestCase
     {
         self::assertTrue(true);
 
+        /**
+         * Получаем список чатов и берем первый для идентификатора
+         */
+
+        /** @var YandexGetChatsInfoRequest $YandexGetChatsInfoRequest */
+        $YandexGetChatsInfoRequest = self::getContainer()->get(YandexGetChatsInfoRequest::class);
+        $YandexGetChatsInfoRequest->tokenHttpClient(self::$authorization);
+
+        $result = $YandexGetChatsInfoRequest->findAll();
+
+        if(false === $result || false === $result->valid())
+        {
+            return;
+        }
+
+        /** @var YandexChatsDTO $YandexChatsDTO */
+        $YandexChatsDTO = $result->current();
+
+
+        /**
+         * Получаем список сообщений чата
+         */
+
         /** @var YandexGetListMessagesRequest $YandexGetListMessagesRequest */
         $YandexGetListMessagesRequest = self::getContainer()->get(YandexGetListMessagesRequest::class);
         $YandexGetListMessagesRequest->tokenHttpClient(self::$authorization);
 
-        $YandexGetListMessagesRequest->chat('chatId');
+        $YandexGetListMessagesRequest->chat($YandexChatsDTO->getId());
 
         $result = $YandexGetListMessagesRequest->findAll();
 
@@ -83,12 +108,9 @@ class YandexGetListMessagesRequestTest extends KernelTestCase
                 {
                     // Вызываем метод
                     $data = $method->invoke($YandexListMessagesDTO);
-                    // dump($data);
+                    //dump($data);
                 }
             }
-
-            break;
-
         }
     }
 }
