@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace BaksDev\Yandex\Support\Messenger\Schedules\YandexSupportNewReview;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
+use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Support\Entity\Event\SupportEvent;
 use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Repository\FindExistMessage\FindExistExternalMessageByIdInterface;
@@ -42,6 +43,7 @@ use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
 use BaksDev\Yandex\Market\Repository\YaMarketTokensByProfile\YaMarketTokensByProfileInterface;
 use BaksDev\Yandex\Support\Api\Review\Get\GetComments\YandexGetCommentsRequest;
 use BaksDev\Yandex\Support\Api\Review\Get\GetListReviews\YandexGetListReviewsRequest;
+use BaksDev\Yandex\Support\Messenger\ReplyMessage\YandexSupportReplyReview\AutoReplyYandexReviewMessage;
 use BaksDev\Yandex\Support\Schedule\YandexGetNewReview\YandexGetNewReviewSchedule;
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexReviewSupport;
 use DateInterval;
@@ -63,6 +65,7 @@ final readonly class NewYandexSupportReviewHandler
         private FindExistExternalMessageByIdInterface $findExistMessage,
         private DeduplicatorInterface $deduplicator,
         private YaMarketTokensByProfileInterface $YaMarketTokensByProfile,
+        private MessageDispatchInterface $messageDispatch,
     ) {}
 
     public function __invoke(NewYandexSupportReviewMessage $message): void
@@ -193,6 +196,8 @@ final readonly class NewYandexSupportReviewHandler
 
             }
 
+            $comment = null;
+
             if($comments->valid())
             {
                 foreach($comments as $comment)
@@ -232,13 +237,39 @@ final readonly class NewYandexSupportReviewHandler
             }
 
             /** Сохраняем в БД */
-            $handle = $this->supportHandler->handle($SupportDTO);
+            $Support = $this->supportHandler->handle($SupportDTO);
 
-            if(false === ($handle instanceof Support))
+            if(false === ($Support instanceof Support))
             {
                 $this->logger->critical(
-                    sprintf('yandex-support: Ошибка %s при обновлении чата', $handle),
+                    sprintf('yandex-support: Ошибка %s при обновлении чата', $Support),
                     [self::class.':'.__LINE__],
+                );
+
+                return;
+            }
+
+
+            // после добавления отзыва в БД - инициирую авто ответ по условию
+
+            /**
+             * Условия ответа на отзывы
+             *
+             * рейтинг равен 5 с текстом:
+             * - авто комментарий с благодарностью (сообщение)
+             *
+             * рейтинг меньше 5 и без текста:
+             * - авто комментарий с извинениями (сообщение)
+             *
+             * рейтинг меньше 5 с текстом:
+             * - отвечает контент менеджер
+             */
+
+            if($YandexReviewDTO->getRating() === 5 || empty($comment?->getText()))
+            {
+                $this->messageDispatch->dispatch(
+                    message: new AutoReplyYandexReviewMessage($Support->getId(), $YandexReviewDTO->getRating()),
+                    transport: 'yandex-support',
                 );
             }
         }

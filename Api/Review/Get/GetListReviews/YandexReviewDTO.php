@@ -62,6 +62,8 @@ final  class YandexReviewDTO
     /** Дата и время создания отзыва.  */
     private DateTimeImmutable $created;
 
+    private int $rating;
+
 
     public function __construct(array $data)
     {
@@ -80,6 +82,8 @@ final  class YandexReviewDTO
         $this->text = $this->text($data['description'], $data['media']);
 
         $this->created = new DateTimeImmutable($data['createdAt']);
+
+        $this->rating = $data['statistics']['rating'];
 
 
     }
@@ -183,5 +187,10 @@ final  class YandexReviewDTO
     public function getCreated(): DateTimeImmutable
     {
         return $this->created;
+    }
+
+    public function getRating(): int
+    {
+        return $this->rating;
     }
 }
