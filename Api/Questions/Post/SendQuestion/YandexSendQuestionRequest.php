@@ -23,41 +23,55 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Yandex\Support\Api\Questions\Get;
+namespace BaksDev\Yandex\Support\Api\Questions\Post\SendQuestion;
 
 use BaksDev\Yandex\Market\Api\YandexMarket;
-use Generator;
-use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
-/**
- * Возвращает ваши чаты с покупателями.
- */
-#[Autoconfigure(public: true)]  /* TODO: удалить !!! */
-final class YandexGetQuestionsRequest extends YandexMarket
+final class YandexSendQuestionRequest extends YandexMarket
 {
-    /**
-     * Получение вопросов о товарах продавца
-     *
-     * @see https://yandex.ru/dev/market/partner-api/doc/ru/reference/goods-questions/getGoodsQuestions
-     *
-     * @return Generator<YandexQuestionDTO>
-     */
-    public function findAll(): Generator|false
+    /** Идентификатор вопроса. */
+    private int $id;
+
+    /** Текст сообщения. */
+    private string $message;
+
+    public function identifier(int|string $id): self
     {
+        $this->id = (int) $id;
+        return $this;
+    }
+
+    public function message(string $message): self
+    {
+        $this->message = $message;
+        return $this;
+    }
+
+
+    /**
+     * Создание ответа на вопрос
+     *
+     * @see https://yandex.ru/dev/market/partner-api/doc/ru/reference/goods-questions/updateGoodsQuestionTextEntity
+     */
+    public function send(): bool
+    {
+        if($this->isExecuteEnvironment() === false)
+        {
+            $this->logger->critical('Запрос может быть выполнен только в PROD окружении', [self::class.':'.__LINE__]);
+            return true;
+        }
+
         $data = [
-            'limit' => 50,
+            'operationType' => 'CREATE',
+            'parentEntityId' => ['id' => $this->id, 'type' => 'QUESTION'],
+            'text' => $this->message,
         ];
 
         $response = $this->TokenHttpClient()
             ->request(
                 'POST',
-                sprintf('/v1/businesses/%s/goods-questions', $this->getBusiness()),
-                [
-                    'json' => [
-                        'limit' => 50,
-                        'needAnswer' => true,
-                    ],
-                ],
+                sprintf('/v1/businesses/%s/goods-questions/update', $this->getBusiness()),
+                ["json" => $data],
             );
 
         $content = $response->toArray(false);
@@ -65,16 +79,18 @@ final class YandexGetQuestionsRequest extends YandexMarket
         if($response->getStatusCode() !== 200)
         {
             $this->logger->critical(
-                sprintf('yandex-support: Ошибка %s при получении вопросов о товарах продавца', $response->getStatusCode()),
-                [self::class.':'.__LINE__, $content],
+                sprintf('yandex-support: ошибка %s отправки ответа на вопрос', $response->getStatusCode()),
+                [self::class.':'.__LINE__, $content, $data],
             );
 
             return false;
         }
 
-        foreach($content['result']['questions'] as $item)
+        if(empty($content))
         {
-            yield new YandexQuestionDTO($item);
+            return false;
         }
+
+        return true;
     }
 }

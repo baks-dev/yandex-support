@@ -28,11 +28,13 @@ namespace BaksDev\Yandex\Support\Messenger\Schedules\NewYandexSupportQuestions;
 
 use BaksDev\Core\Deduplicator\DeduplicatorInterface;
 use BaksDev\Core\Twig\CallTwigFuncExtension;
+use BaksDev\Orders\Order\Repository\SearchProfileByNumber\SearchProfileByNumberInterface;
 use BaksDev\Products\Product\Repository\CurrentProductByArticle\CurrentProductByBarcodeResult;
 use BaksDev\Products\Product\Repository\CurrentProductByArticle\ProductConstByArticleInterface;
 use BaksDev\Products\Product\Repository\ProductDetail\ProductDetailByEventInterface;
 use BaksDev\Products\Product\Repository\ProductDetail\ProductDetailByEventResult;
 use BaksDev\Support\Entity\Event\SupportEvent;
+use BaksDev\Support\Entity\Support;
 use BaksDev\Support\Repository\ExistTicket\ExistSupportTicketInterface;
 use BaksDev\Support\Type\Priority\SupportPriority;
 use BaksDev\Support\Type\Priority\SupportPriority\Collection\SupportPriorityLow;
@@ -41,7 +43,9 @@ use BaksDev\Support\Type\Status\SupportStatus\Collection\SupportStatusOpen;
 use BaksDev\Support\UseCase\Admin\New\Invariable\SupportInvariableDTO;
 use BaksDev\Support\UseCase\Admin\New\Message\SupportMessageDTO;
 use BaksDev\Support\UseCase\Admin\New\SupportDTO;
+use BaksDev\Support\UseCase\Admin\New\SupportHandler;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\TypeProfileUid;
+use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use BaksDev\Yandex\Market\Repository\YaMarketTokensByProfile\YaMarketTokensByProfileInterface;
 use BaksDev\Yandex\Support\Api\Questions\Get\YandexGetQuestionsRequest;
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexQuestionSupport;
@@ -61,12 +65,13 @@ final readonly class NewYandexSupportQuestionsHandler
         private ExistSupportTicketInterface $ExistSupportTicketRepository,
         private ProductConstByArticleInterface $ProductConstByArticleRepository,
         private ProductDetailByEventInterface $ProductDetailByEventRepository,
+        private SearchProfileByNumberInterface $SearchProfileByNumberRepository,
+        private SupportHandler $SupportHandler,
         private Environment $environment
     ) {}
 
     public function __invoke(NewYandexSupportQuestionsMessage $message): void
     {
-
         /** Дедубликатор от повторных вызовов */
 
         $isExecuted = $this
@@ -112,7 +117,6 @@ final readonly class NewYandexSupportQuestionsHandler
 
             foreach($questions as $YandexQuestionDTO)
             {
-
                 /** Получаем ID вопроса */
                 $ticketId = $YandexQuestionDTO->getId();
 
@@ -137,12 +141,6 @@ final readonly class NewYandexSupportQuestionsHandler
                     $DeduplicatorTicket->save();
                     continue;
                 }
-
-                $SupportDTO = new SupportDTO();
-
-                /** Присваиваем статус "Открытый", так как сообщение еще не прочитано   */
-                $SupportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM));
-
 
                 /**
                  * Получаем продукцию по артикулу
@@ -226,13 +224,16 @@ final readonly class NewYandexSupportQuestionsHandler
 
                 $name .= $offer ? ' '.trim($offer) : '';
 
-
                 $name .= $ProductDetailByEventResult->getProductOfferPostfix() ? ' '.$ProductDetailByEventResult->getProductOfferPostfix() : '';
                 $name .= $ProductDetailByEventResult->getProductVariationPostfix() ? ' '.$ProductDetailByEventResult->getProductVariationPostfix() : '';
                 $name .= $ProductDetailByEventResult->getProductModificationPostfix() ? ' '.$ProductDetailByEventResult->getProductModificationPostfix() : '';
 
+                /** Создаем вопрос */
+
+                $SupportDTO = new SupportDTO();
 
                 $SupportDTO
+                    ->setStatus(new SupportStatus(SupportStatusOpen::PARAM))
                     ->setPriority(new SupportPriority(SupportPriorityLow::PARAM))
                     ->getToken()->setValue($YaMarketTokenUid);
 
@@ -242,11 +243,51 @@ final readonly class NewYandexSupportQuestionsHandler
                     ->setTitle($name);  // Тема сообщения
 
 
-                $SupportMessageDTO = new SupportMessageDTO();
+                /** Пробуем найти по тексту идентификатор заказа для присваивания профиля */
 
+                if($YandexQuestionDTO->getText())
+                {
+                    // Для формата с дефисами: XXXXXXXXXX-XXXX-X
+                    if(preg_match('/\b\d{11}\b/', $YandexQuestionDTO->getText(), $matches))
+                    {
+                        /** Пробуем определить профиль по идентификатору заказа */
+                        $foundValue = $matches[0];
+
+                        $UserProfileUid = $this->SearchProfileByNumberRepository->find($foundValue);
+
+                        if($UserProfileUid instanceof UserProfileUid)
+                        {
+                            $SupportInvariableDTO->setProfile($UserProfileUid);
+                        }
+                    }
+                }
+
+                $SupportDTO->setInvariable($SupportInvariableDTO);
+
+                // подготовка DTO для нового сообщения
+                $SupportMessageDTO = new SupportMessageDTO()
+                    ->setName($YandexQuestionDTO->getAuthorName())
+                    ->setMessage($YandexQuestionDTO->getText())
+                    ->setDate($YandexQuestionDTO->getCreate())
+                    ->setExternal($YandexQuestionDTO->getId())
+                    ->setInMessage();
+
+                $SupportDTO->addMessage($SupportMessageDTO);
+
+                $Support = $this->SupportHandler->handle($SupportDTO);
+
+                if(false === $Support instanceof Support)
+                {
+                    $this->logger->critical(
+                        sprintf('yandex-support: Ошибка %s при создании/обновлении чата поддержки', $Support),
+                        [
+                            self::class.':'.__LINE__,
+                            var_export($message, true),
+                            $SupportDTO->getInvariable()?->getTicket(),
+                        ],
+                    );
+                }
             }
-
         }
-
     }
 }

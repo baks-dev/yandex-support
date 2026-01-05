@@ -8,3 +8,8 @@ yandex-support:
   review:
     name: 'Ya: Отзыв'
     desc: 'Отзывы Яндекс'
+
+  question:
+    name: 'Ya: Вопрос'
+    desc: 'Вопрос от пользователя Яндекс'
+

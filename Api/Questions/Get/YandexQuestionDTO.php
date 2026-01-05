@@ -1,17 +1,17 @@
 <?php
 /*
  *  Copyright 2026.  Baks.dev <admin@baks.dev>
- *
+ *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
  *  in the Software without restriction, including without limitation the rights
  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  *  copies of the Software, and to permit persons to whom the Software is furnished
  *  to do so, subject to the following conditions:
- *
+ *  
  *  The above copyright notice and this permission notice shall be included in all
  *  copies or substantial portions of the Software.
- *
+ *  
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  *  FITNESS FOR A PARTICULAR PURPOSE AND NON INFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,7 +39,7 @@ final class YandexQuestionDTO
     private DateTimeImmutable $create;
 
     /** Имя автора или название кабинета. */
-    private string $name;
+    private string $author;
 
     /** Текстовое содержимое вопроса */
     private string $text;
@@ -49,7 +49,7 @@ final class YandexQuestionDTO
         $this->id = $data['questionIdentifiers']['id'];
         $this->article = $data['questionIdentifiers']['offerId'];
 
-        $this->name = $data['author']['name'];
+        $this->author = $data['author']['name'];
         $this->text = $data['text'];
 
         $this->create = new DateTimeImmutable($data['createdAt']);
@@ -70,9 +70,9 @@ final class YandexQuestionDTO
         return $this->create;
     }
 
-    public function getName(): string
+    public function getAuthorName(): string
     {
-        return $this->name;
+        return $this->author;
     }
 
     public function getText(): string
