@@ -286,7 +286,11 @@ final readonly class NewYandexSupportQuestionsHandler
                             $SupportDTO->getInvariable()?->getTicket(),
                         ],
                     );
+
+                    continue;
                 }
+
+                $DeduplicatorTicket->save();
             }
         }
     }
