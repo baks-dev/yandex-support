@@ -23,18 +23,18 @@
 
 declare(strict_types=1);
 
-namespace BaksDev\Yandex\Support\Api\Messenger\Post\SendMessage\Tests;
+namespace BaksDev\Yandex\Support\Api\Messenger\Post\CreateChat\Tests;
 
 use BaksDev\Users\Profile\UserProfile\Type\Id\UserProfileUid;
 use BaksDev\Yandex\Market\Type\Authorization\YaMarketAuthorizationToken;
-use BaksDev\Yandex\Support\Api\Messenger\Post\SendMessage\YandexSendMessageRequest;
+use BaksDev\Yandex\Support\Api\Messenger\Post\CreateChat\CreateYaMarketChatRequest;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\Attribute\When;
 
 #[When(env: 'test')]
 #[Group('yandex-support')]
-class YandexSendMessageRequestTest extends KernelTestCase
+class CreateYaMarketChatRequestTest extends KernelTestCase
 {
     private static YaMarketAuthorizationToken $authorization;
 
@@ -52,14 +52,13 @@ class YandexSendMessageRequestTest extends KernelTestCase
 
     public function testComplete(): void
     {
-        /** @var YandexSendMessageRequest $YandexSendMessageRequest */
-        $YandexSendMessageRequest = self::getContainer()->get(YandexSendMessageRequest::class);
-        $YandexSendMessageRequest->tokenHttpClient(self::$authorization);
+        /** @var CreateYaMarketChatRequest $CreateYaMarketChatRequest */
+        $CreateYaMarketChatRequest = self::getContainer()->get(CreateYaMarketChatRequest::class);
+        $CreateYaMarketChatRequest->tokenHttpClient(self::$authorization);
 
-        $reviews = $YandexSendMessageRequest
-            ->yandexChat('chat_id')
-            ->message('New Test Message')
-            ->send();
+        $reviews = $CreateYaMarketChatRequest
+            ->order('order_id')
+            ->create();
 
         self::assertTrue($reviews);
     }
