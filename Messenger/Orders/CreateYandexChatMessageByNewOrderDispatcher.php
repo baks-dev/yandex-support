@@ -147,7 +147,7 @@ final readonly class CreateYandexChatMessageByNewOrderDispatcher
 
         $msg = sprintf(
             'Здравствуйте! Спасибо за Ваш заказ #%s.',
-            $OrderEvent->getOrderNumber(),
+            str_replace('Y-', '', $OrderEvent->getOrderNumber()),
         );
 
         $msg .= PHP_EOL.'Настоятельно рекомендуем Вам проверить, соответствуют ли характеристики товара Вашим требованиям:';
