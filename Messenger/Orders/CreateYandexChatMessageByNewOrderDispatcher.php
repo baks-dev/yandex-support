@@ -53,7 +53,10 @@ use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Twig\Environment;
 
-#[AsMessageHandler(priority: -100)]
+/**
+ * Создаем чат с клиентом Yandex с уточнением характеристик
+ */
+#[AsMessageHandler(priority: -99)]
 final readonly class CreateYandexChatMessageByNewOrderDispatcher
 {
     public function __construct(
@@ -90,15 +93,15 @@ final readonly class CreateYandexChatMessageByNewOrderDispatcher
             return;
         }
 
-        /** Если статус не New «Новый»  */
-        if(false === $OrderEvent->isStatusEquals(OrderStatusNew::class))
-        {
-            return;
-        }
-
         if(false === $OrderEvent->isDeliveryTypeEquals(TypeDeliveryFbsYaMarket::TYPE))
         {
             $Deduplicator->save();
+            return;
+        }
+
+        /** Если статус не New «Новый»  */
+        if(false === $OrderEvent->isStatusEquals(OrderStatusNew::class))
+        {
             return;
         }
 
