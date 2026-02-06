@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -165,15 +165,13 @@ final readonly class NewYandexSupportReviewHandler
 
                 /** Сохраняем данные SupportInvariableDTO в Support */
                 $SupportDTO->setInvariable($SupportInvariableDTO);
+
+                $SupportDTO->getRating()->setValue($YandexReviewDTO->getRating());
             }
 
             /** Присваиваем статус "Открытый", так как сообщение еще не прочитано   */
             $SupportDTO->setStatus(new SupportStatus(SupportStatusOpen::PARAM));
 
-            if(!$reviews->valid())
-            {
-                return;
-            }
 
             /** Если такое сообщение уже есть в БД, то пропускаем */
             $reviewExist = $this->findExistMessage
