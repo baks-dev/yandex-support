@@ -28,6 +28,9 @@ namespace BaksDev\Yandex\Support\Types\ProfileType;
 use BaksDev\Users\Profile\TypeProfile\Type\Id\Choice\Collection\TypeProfileInterface;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
+/**
+ * Support Question «Вопрос»
+ */
 #[AutoconfigureTag('baks.users.profile.type')]
 final class TypeProfileYandexQuestionSupport implements TypeProfileInterface
 {
