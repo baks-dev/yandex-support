@@ -170,10 +170,12 @@ final readonly class NewYandexSupportHandler
 
                     if(false === is_null($chat->getOrder()))
                     {
-                        $OrderEvent = $this->CurrentOrderEventByNumberRepository->find('Y-'.$chat->getOrder());
+                        $arrOrderEvent = $this->CurrentOrderEventByNumberRepository
+                            ->findAll('Y-'.$chat->getOrder());
 
-                        if($OrderEvent instanceof OrderEvent)
+                        if(false === empty($arrOrderEvent))
                         {
+                            $OrderEvent = current($arrOrderEvent);
                             $SupportInvariableDTO->setProfile($OrderEvent->getOrderProfile()); // Профиль по заказу
                         }
                     }
