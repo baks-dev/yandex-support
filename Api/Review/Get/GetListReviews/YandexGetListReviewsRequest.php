@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,9 @@ namespace BaksDev\Yandex\Support\Api\Review\Get\GetListReviews;
 use BaksDev\Yandex\Market\Api\YandexMarket;
 use DateTimeImmutable;
 use Generator;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
-
+#[Autoconfigure(public: true)]
 final class YandexGetListReviewsRequest extends YandexMarket
 {
     /**

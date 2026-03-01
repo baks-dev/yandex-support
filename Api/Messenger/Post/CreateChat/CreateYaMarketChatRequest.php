@@ -26,7 +26,9 @@ declare(strict_types=1);
 namespace BaksDev\Yandex\Support\Api\Messenger\Post\CreateChat;
 
 use BaksDev\Yandex\Market\Api\YandexMarket;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
+#[Autoconfigure(public: true)]
 final class CreateYaMarketChatRequest extends YandexMarket
 {
     private string $order;

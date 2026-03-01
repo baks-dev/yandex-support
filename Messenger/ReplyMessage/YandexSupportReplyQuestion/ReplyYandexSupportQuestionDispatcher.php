@@ -41,9 +41,11 @@ use BaksDev\Yandex\Support\Api\Questions\Post\SendQuestion\YandexSendQuestionReq
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexQuestionSupport;
 use DateInterval;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+#[Autoconfigure(public: true)]
 #[AsMessageHandler(priority: 0)]
 final readonly class ReplyYandexSupportQuestionDispatcher
 {

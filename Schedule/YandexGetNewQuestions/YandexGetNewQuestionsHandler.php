@@ -30,9 +30,11 @@ use BaksDev\Core\Messenger\MessageDelay;
 use BaksDev\Core\Messenger\MessageDispatchInterface;
 use BaksDev\Yandex\Market\Repository\AllProfileToken\AllProfileYaMarketTokenInterface;
 use BaksDev\Yandex\Support\Messenger\Schedules\NewYandexSupportQuestions\NewYandexSupportQuestionsMessage;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-#[AsMessageHandler]
+#[Autoconfigure(public: true)]
+#[AsMessageHandler(priority: 0)]
 final readonly class YandexGetNewQuestionsHandler
 {
     public function __construct(

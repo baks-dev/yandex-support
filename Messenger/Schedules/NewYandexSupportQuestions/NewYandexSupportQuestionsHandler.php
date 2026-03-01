@@ -50,10 +50,12 @@ use BaksDev\Yandex\Market\Repository\YaMarketTokensByProfile\YaMarketTokensByPro
 use BaksDev\Yandex\Support\Api\Questions\Get\YandexGetQuestionsRequest;
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexQuestionSupport;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Twig\Environment;
 
+#[Autoconfigure(public: true)]
 #[AsMessageHandler(priority: 0)]
 final readonly class NewYandexSupportQuestionsHandler
 {

@@ -1,6 +1,6 @@
 <?php
 /*
- *  Copyright 2025.  Baks.dev <admin@baks.dev>
+ *  Copyright 2026.  Baks.dev <admin@baks.dev>
  *  
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -27,10 +27,12 @@ namespace BaksDev\Yandex\Support\Api\Messenger\Get\ChatsInfo;
 
 use BaksDev\Yandex\Market\Api\YandexMarket;
 use Generator;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
 /**
  * Возвращает ваши чаты с покупателями.
  */
+#[Autoconfigure(public: true)]
 final class YandexGetChatsInfoRequest extends YandexMarket
 {
     /** Фильтр по типам чатов. */
@@ -120,7 +122,6 @@ final class YandexGetChatsInfoRequest extends YandexMarket
 
             return false;
         }
-
 
         foreach($content['result']['chats'] as $item)
         {

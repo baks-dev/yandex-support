@@ -49,6 +49,7 @@ use BaksDev\Yandex\Support\Api\Messenger\Post\CreateChat\CreateYaMarketChatReque
 use BaksDev\Yandex\Support\Types\ProfileType\TypeProfileYandexMessageSupport;
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Twig\Environment;
@@ -56,6 +57,7 @@ use Twig\Environment;
 /**
  * Создаем чат с клиентом Yandex с уточнением характеристик
  */
+#[Autoconfigure(public: true)]
 #[AsMessageHandler(priority: -99)]
 final readonly class CreateYandexChatMessageByNewOrderDispatcher
 {
