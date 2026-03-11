@@ -32,7 +32,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 /**
  * Возвращает ваши чаты с покупателями.
  */
-#[Autoconfigure(public: true)]
+// #[Autoconfigure(public: true)]
 final class YandexGetChatsInfoRequest extends YandexMarket
 {
     /** Фильтр по типам чатов. */

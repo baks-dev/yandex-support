@@ -29,7 +29,7 @@ use BaksDev\Yandex\Market\Api\YandexMarket;
 use Generator;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
-#[Autoconfigure(public: true)]
+// #[Autoconfigure(public: true)]
 final class YandexGetCommentsRequest extends YandexMarket
 {
     /**  Идентификатор отзыва. */

@@ -55,7 +55,7 @@ use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Twig\Environment;
 
-#[Autoconfigure(public: true)]
+// #[Autoconfigure(public: true)]
 #[AsMessageHandler(priority: 0)]
 final readonly class NewYandexSupportQuestionsHandler
 {

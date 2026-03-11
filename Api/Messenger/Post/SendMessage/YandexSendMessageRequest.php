@@ -28,7 +28,7 @@ namespace BaksDev\Yandex\Support\Api\Messenger\Post\SendMessage;
 use BaksDev\Yandex\Market\Api\YandexMarket;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 
-#[Autoconfigure(public: true)]
+// #[Autoconfigure(public: true)]
 final class YandexSendMessageRequest extends YandexMarket
 {
     /** Идентификатор чата. */
