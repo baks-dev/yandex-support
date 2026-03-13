@@ -57,7 +57,7 @@ use Twig\Environment;
 /**
  * Создаем чат с клиентом Yandex с уточнением характеристик
  */
-// #[Autoconfigure(public: true)]
+#[Autoconfigure(shared: false)]
 #[AsMessageHandler(priority: -99)]
 final readonly class CreateYandexChatMessageByNewOrderDispatcher
 {
